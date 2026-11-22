@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>New York 1865 · Great Cities 3D</title>
+<style>
+:root{--bg:#e6eeee;--panel:#f6f8f7;--ink:#1c2b3a;--muted:#5b6b78;--line:#c6d2d4;--brass:#8a6716;--good:#2f7a3d;--bad:#b23a2a;--chip:#dce6e6;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1a26;--panel:#16222f;--ink:#e8e2d2;--muted:#94a2ae;--line:#2a3b4e;--brass:#d8b45e;--good:#82c98f;--bad:#f08b78;--chip:#1f3043;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+html{height:calc(100% + 2px);overflow-x:hidden;overflow-y:scroll;scrollbar-width:none;overscroll-behavior:none}html::-webkit-scrollbar{display:none}
+body{height:calc(100% - 2px);overscroll-behavior:none;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* on a phone Safari gives the top safe area a little less than the Dynamic Island takes: a little more room, so the island never covers the top bar */
+@media (pointer:coarse){body{padding-top:calc(env(safe-area-inset-top,0px) + 12px)}}
+/* Safari on a phone zooms the page in on any text box under 16px when it is tapped, and keeps the zoom afterwards */
+@media (pointer:coarse){textarea,input,select{font-size:16px!important}}
+h1,h2{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;font-weight:600;margin:0 0 6px}
+h1{font-size:34px;letter-spacing:.5px}
+h2{font-size:19px}
+p{margin:4px 0}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+#top{background:var(--panel);border-bottom:1px solid var(--line);padding:6px 8px 4px}
+#res{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none}
+#res::-webkit-scrollbar,.row::-webkit-scrollbar{display:none}
+.chip{flex:none;background:var(--chip);border-radius:999px;padding:3px 9px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip.low{color:var(--bad);font-weight:600}
+.chip.alert{background:var(--bad);color:var(--panel);font-weight:600}
+.chip small{color:var(--muted)}
+.chip small.pos{color:var(--good)}.chip small.neg{color:var(--bad)}
+#hint{font-size:12.5px;color:var(--muted);padding:4px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#stage{position:relative;flex:1;min-height:0;overflow:hidden}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+#mini{position:absolute;top:8px;right:8px;border-radius:10px;background:#1d5577;border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;touch-action:none}
+.chn{border:1px solid rgba(216,180,94,.3);border-radius:12px;background:rgba(216,180,94,.07);padding:9px 11px 6px;margin:8px 0}.chn h3{margin:0 0 2px;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:8px}.chG{margin:12px 0 4px;font:600 12px system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#b9a678}
+.chst{display:flex;flex-direction:column;margin:5px 0 3px}.ct{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:2px 0;font-size:13.5px;line-height:1.3}.ct small{text-align:right}.ct b{color:#e6cf94;font-weight:600}.ct small{font-size:11.5px;color:#9fd89a}.ct.none b{color:#b9ad92}.ct.none small{color:#a39880}.ct.low small{color:#f0b070}.ct.me{margin:0 -6px;padding:2px 6px;border-radius:6px;background:rgba(224,189,102,.2)}.ct.me b{color:#ffe9a8}.chst i{font-style:normal;color:#b9a678;font-size:12px;line-height:1.15}.chst .cor{font-size:11.5px}.chst .ce{font-weight:600;font-size:14px;margin-top:4px;padding-top:5px;border-top:1px solid rgba(216,180,94,.25)}#info .chst{margin:8px 0 6px;border:1px solid rgba(216,180,94,.3);border-radius:12px;background:rgba(216,180,94,.07);padding:7px 11px}.chn .cp{margin:4px 0 5px;font-weight:600;padding:5px 9px;border-radius:8px;background:rgba(216,180,94,.13);border:1px solid rgba(216,180,94,.32);color:#e6cf94}.chn p{margin:2px 0}.chn.lk{opacity:.6}.chn h3 .chs{font:600 11px system-ui,sans-serif;padding:2px 7px;border-radius:9px;margin-left:6px;vertical-align:2px}.chs.ok{background:rgba(111,191,106,.18);color:#9fd89a}.chs.short{background:rgba(226,140,60,.2);color:#f0b070}.chs.no,.chs.lk{background:rgba(255,255,255,.08);color:#b9ad92}
+.chn .cha{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}.chn .cha button{padding:7px 10px;font-size:13px}
+.chMore{margin-top:8px}.chMore summary{cursor:pointer;font-weight:600;color:#c9b37c;padding:6px 0}
+.stat{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}.stat td{padding:3px 4px;border-top:1px solid var(--line)}.stat td+td{text-align:right}.cityV{font-size:14px;margin-bottom:6px}.cityV td{padding:5px 4px}
+.lv{border-top:1px solid var(--line);padding:10px 0 4px}.lv h3{margin:0;font:600 16px/1.3 "Iowan Old Style",Palatino,Georgia,serif;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.tag{font:500 11px system-ui;color:var(--muted);background:var(--chip);border-radius:999px;padding:2px 8px}.done{color:var(--good);font:600 12px system-ui}
+#euro{width:100%;height:auto;display:block;border-radius:12px;margin:8px 0 4px}#euro .pin{cursor:pointer}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted)}.legend i{display:inline-block;width:12px;height:3px;vertical-align:middle;margin-right:5px}
+#bar{background:var(--panel);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+.row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.row+.row{margin-top:6px}
+button{font:inherit;color:inherit;background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:6px 10px;cursor:pointer}
+button:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+button.pri{background:var(--brass);color:var(--panel);border-color:var(--brass);font-weight:600}
+button.pri .m{color:var(--panel);opacity:.84;font-weight:500}
+.ctl{flex:none}
+.ctl.on,.bb.on{border-color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass)}
+.bb{flex:none;display:flex;align-items:center;gap:6px;width:128px;min-height:46px;padding:4px 8px 4px 6px;text-align:left}
+.bb .bi{position:relative;flex:none;font-size:22px;line-height:1;width:26px;text-align:center}
+.bb .bi i{position:absolute;right:-5px;bottom:-4px;font-size:11px;font-style:normal}
+.bb .bi i.gfl{position:static;font-size:inherit}
+.bb .bt{display:flex;flex-direction:column;min-width:0}
+.bb .bt b{font-weight:600;font-size:12.5px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bb .c{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bbAll{margin:10px 6px;font-size:13px}
+.bb.no{opacity:.45}
+.panel{position:absolute;left:8px;right:8px;bottom:8px;max-width:440px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,.28);max-height:70%;overflow:auto}
+.panel[hidden],#mode[hidden],#ov[hidden]{display:none}
+.m{color:var(--muted);font-size:13px}
+.btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.ok{color:var(--good)}.no2{color:var(--bad)}
+.tr{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.tr .b{display:flex;gap:6px;grid-column:1/-1}
+.tr .b button{flex:1;padding:5px 6px;font-size:13px}
+.tr .tra{grid-column:1/-1;padding:5px 6px;font-size:13px;opacity:.8}.tr .tra.on{opacity:1;border-color:var(--brass);color:var(--brass);font-weight:600}
+#mode{position:absolute;top:auto;bottom:8px;left:8px;right:8px;flex-wrap:wrap;max-width:440px;margin:0 auto;background:var(--panel);border:1px solid var(--brass);border-radius:12px;padding:8px 10px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+#mode div{flex:1 1 100%;font-size:13px}
+#mode button{flex:none;white-space:nowrap}
+#c{filter:sepia(.3) saturate(.78) contrast(1.07) brightness(.86)}
+#vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 55%,rgba(25,15,5,.48) 100%)}
+#conf{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;gap:6px;align-items:center;background:var(--panel,#f4efe2);border:1px solid var(--line,#d9c9a8);border-radius:14px;padding:6px;box-shadow:0 6px 18px rgba(0,0,0,.25);max-width:calc(100vw - 16px)}
+#conf[hidden]{display:none}
+#conf .cfArrows{display:grid;grid-template-columns:repeat(2,40px);gap:4px}
+#conf .cfArrows button{width:40px;height:36px;padding:0;font-size:17px}
+/* the Build button large and wide enough for a thumb: its action on one line, its cost or reason on a second, smaller */
+#conf #confOk{min-height:76px;min-width:150px;padding:8px 18px;max-width:min(220px,calc(100vw - 170px));white-space:normal;line-height:1.2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+#conf #confOk b{font-size:18px;font-weight:700}
+#conf #confOk small{font-size:13px;font-weight:500;opacity:.85}
+#conf #confOk.one b{font-size:15px}
+#conf #confOk:disabled{opacity:.55}
+#conf #confNo{min-height:76px;width:44px;font-size:18px}
+#resBtn.glow{background:#d9a92a;color:#1d1b1a;border-color:#d9a92a;animation:rpulse 1.8s infinite}
+.rdot{display:inline-block;min-width:16px;padding:0 5px;border-radius:9px;background:#b8322a;color:#fff;font-size:11px;line-height:16px;margin-left:3px}
+@keyframes rpulse{50%{box-shadow:0 0 0 5px rgba(217,169,42,.35)}}
+#tut{position:fixed;left:8px;right:8px;top:calc(96px + env(safe-area-inset-top,0px));z-index:25;background:#fffaf0;color:#2a2522;border:1px solid #d9c9a8;border-radius:12px;padding:10px 12px;box-shadow:0 6px 18px rgba(0,0,0,.2);font-size:14px;max-width:520px;margin:0 auto}
+#tut[hidden]{display:none}
+#tut .tutB{display:flex;justify-content:flex-end;gap:6px;margin-top:8px}
+.lowend #c{filter:none!important}
+.lowend #vig{display:none}
+#cats,#subs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}#cats::-webkit-scrollbar,#subs::-webkit-scrollbar{display:none}
+/* the build menu: the groups as a strip of tabs over a line, an icon above a word, the active one underlined in gold; under the line the
+   buildings themselves as cards to tap, each with its picture, name and price */
+#cats{gap:0;border-bottom:1px solid rgba(216,180,94,.35);padding-bottom:0}
+#cats .cat{flex:1 0 auto;min-width:64px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 6px 6px;border:0;border-radius:0;background:transparent;border-bottom:3px solid transparent;color:#b9b0a0;font-size:11.5px;white-space:nowrap}
+#cats .cat i{font-style:normal;font-size:20px;line-height:1}
+#cats .cat.on{color:#e8cf8a;border-bottom-color:#d9a92a;background:rgba(217,169,42,.1)}
+#subs .cat{flex:none;padding:6px 12px;border-radius:16px;font-size:13px;white-space:nowrap}
+/* room round the cards for the ring of the one the tutorial points at */
+#builds{padding:8px 4px 4px}
+.bb{flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;width:96px!important;min-height:92px!important;padding:8px 5px 6px!important;gap:4px!important;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(216,180,94,.45)}
+.bb .bi{font-size:30px!important;width:auto!important}
+.bb .bt{align-items:center}
+.bb .bt{max-width:100%}.bb .bt b{font-size:12px;text-align:center;max-width:100%}
+#undoPill{position:absolute;right:10px;bottom:calc(100% + 8px);z-index:5;padding:8px 14px;border-radius:18px;background:rgba(28,22,16,.92);color:#efe6d2;border:1px solid rgba(216,180,94,.6);font:600 13px system-ui,sans-serif}
+#undoPill[hidden]{display:none}
+/* while the build card is up, Undo is one of its buttons rather than a pill over it; both follow the pill's two minutes */
+#modeUndo{display:none}body:has(#undoPill:not([hidden])) #modeUndo{display:inline-block}
+/* the build card's buttons are big and share the row; Done is the filled one, Undo has a brass rim */
+#mode #modeFind,#mode #modeUndo,#mode #modeDone{flex:1 1 0;min-height:42px;padding:9px 12px;border-radius:12px;font:700 15.5px system-ui,sans-serif}
+#mode #modeDone{background:var(--brass);color:var(--panel);border:1px solid #e2b84a}
+#mode #modeUndo{background:rgba(216,180,94,.14);color:var(--brass);border:1.5px solid var(--brass)}
+body:not(.tg):has(#mode:not([hidden]):not([style*="hidden"])) #undoPill{display:none}
+/* a build card's costs wrap onto a second line rather than run out of it */
+.bb .c{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.3;text-align:center}
+.bb.locked{opacity:.62}.bb.locked .bi{filter:grayscale(1);opacity:.7}
+#subs{padding-bottom:4px}#subs .cat{padding:3px 10px;font-size:12px;background:transparent}#subs .cat b{background:#d8b45e;color:#1d1b1a;border-radius:8px;padding:0 5px;font-size:10.5px;margin-left:2px}#subs .cat.on{background:rgba(217,169,42,.22);color:inherit;border-color:#d9a92a}#subs[hidden]{display:none}
+#bar:not(.open) #cats,#bar:not(.open) #subs,#bar:not(.open) #builds,#bar:not(.open) #trayAct{display:none}#trayAct:not(:has(button:not([hidden]))){display:none}
+#bar{position:relative}#bar.open #tabs{margin-top:6px}#bar.open{display:flex;flex-direction:column}#bar.open #tabs{order:9}
+#tabs{display:flex;gap:4px;max-width:560px;width:100%;margin:0 auto}.tab{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:48px;padding:3px 2px;background:transparent;border-color:transparent;border-radius:12px;line-height:1.1}
+.tab[hidden]{display:none}.tab i{font-style:normal;font-size:21px;line-height:1}.tab span{font-size:11.5px;font-weight:600;color:var(--muted);white-space:nowrap}
+.tab.on{background:var(--chip);border-color:var(--brass)}.tab.on span{color:var(--ink,inherit)}
+.tab.newb,.sheet button.newb{animation:rpulse 1.8s 4;border-color:var(--brass)}
+.tab .rdot{position:absolute;margin:-30px 0 0 26px}
+.sheet{position:absolute;left:8px;right:8px;bottom:calc(100% + 6px);max-width:440px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 10px 10px;box-shadow:0 8px 28px rgba(0,0,0,.3);display:grid;grid-template-columns:1fr 1fr;gap:6px;z-index:6}
+.sheet[hidden],.sheet button[hidden]{display:none}.sheet button{min-height:44px;text-align:left}
+.shs{grid-column:1/-1;font-size:12px;letter-spacing:.04em;color:var(--muted,#a99f8f);border-top:1px solid var(--line);margin-top:4px;padding:8px 2px 0}
+.shh{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 2px}.shx{width:34px;height:34px;padding:0;border-radius:10px}
+#trayAct{justify-content:flex-start}
+#res .chip small.pos{color:#8fd18a}#res .chip small.neg{color:#ff8a7a}#res .chip{white-space:nowrap}#res .chip i.cur,#res .chip i.ic{font-style:normal}
+@media (max-width:430px){#res .chip i.cur,#res .chip i.ic{display:none}}
+/* the top row: every chip whole, never cut short; with room to spare they share it out. The mood sits in the people's chip, behind a fine line */
+#res{overflow:hidden;cursor:pointer}#res .chip{flex:1 0 auto;text-align:center}#res .chip.al,#res .chip:first-child{flex:none}#res{gap:4px}#res .chip{padding-left:7px;padding-right:7px}
+#res .chip .hp{margin-left:6px;padding-left:6px;border-left:1px solid rgba(255,255,255,.16);font-weight:inherit}#res .chip .hp.neg{color:#ffb0a4}#res .chip .hp.mid{color:#f0d08a}
+#res.t1{gap:3px}#res.t1 .chip{padding-left:5px;padding-right:5px}#res.t1 .chip .hp{margin-left:4px;padding-left:4px}#res.t2{font-size:13px}#res.t2 .coin{width:16px;height:16px}
+#res.t3{gap:2px;letter-spacing:-.2px}#res.t3 .chip{padding-left:4px;padding-right:4px}
+/* German numbers are longer (550 Tsd.): on a narrow phone the chips give up some of their padding so people and money stay whole */
+@media (max-width:400px){html[lang=de] #res{gap:3px}html[lang=de] #res .chip{padding-left:4px;padding-right:4px}}
+/* on a phone the money's change per minute stays beside it, its arrow and number without the "/min" */
+.ovg{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:13px;font-variant-numeric:tabular-nums}.ovg span.low{color:var(--bad);font-weight:600}
+#buildBtn{background:var(--brass);color:var(--panel);border-color:var(--brass)}#buildBtn span{color:var(--panel)}#buildBtn.on{background:var(--chip);color:inherit}#buildBtn.on span{color:inherit}
+#trade:not([hidden]){z-index:31}
+.tr.hl,#loanBtn.hl{background:rgba(217,169,42,.28);border-radius:8px;transition:background .3s}
+#planCred{position:absolute;left:8px;bottom:8px;font-size:10px;padding:3px 7px;border-radius:8px;background:rgba(20,24,30,.65);color:#f2ead8;pointer-events:none;z-index:2}
+.ctl.on{outline:2px solid #d9a92a}
+#zb{position:absolute;right:8px;top:94px;display:flex;flex-direction:column;gap:6px}
+#zb button{width:42px;height:42px;border-radius:12px;font-size:22px;line-height:1;padding:0;background:var(--panel);border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.plc{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+/* the laws: a card each for those in force (green edge) and those to enact, a line for those to come */
+.law{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:6px 0;font-size:13.5px}.law.plr{display:grid;grid-template-columns:1fr auto;align-items:start;gap:10px}.law.plr button{margin-top:6px}
+.plS{white-space:nowrap;font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.06);color:var(--muted)}.plS.done{background:rgba(95,154,99,.18);color:#9fd09b}.plS.late{background:rgba(217,169,42,.18);color:#f0d08a}.plS.site{background:rgba(216,180,94,.14);color:#e6cf94}.law.on{border-color:#5f9a63;background:rgba(95,154,99,.12)}.law .lh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px}.law .lh button{flex:none;padding:5px 10px;font-size:13px}.lawg{margin:10px 0 2px;text-transform:uppercase;letter-spacing:.06em;font-size:11.5px}.lawl{margin:2px 0;font-size:13px}.plc button{text-align:left;padding:10px 12px}
+#hint{cursor:pointer}
+#sndTap{position:absolute;right:8px;top:72px;z-index:4;padding:7px 12px;min-height:0;border-radius:999px;font-size:13px;background:rgba(18,24,32,.78);color:#efe6d2;border:1px solid rgba(216,180,94,.5)}#sndTap[hidden]{display:none}
+#toast{position:absolute;z-index:40;bottom:118px;left:50%;transform:translateX(-50%);background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.3);padding:7px 12px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%;text-align:center}
+/* on the map a note sits small just under the top bar (engine.js toast sets --toastTop), clear of the cards and sheets below, and a tap closes it */
+body:not(.walking):not(.placing) #toast{bottom:auto;top:var(--toastTop,calc(110px + env(safe-area-inset-top,0px)));font-size:12.5px;line-height:1.3;padding:5px 26px 5px 10px;max-width:min(380px,calc(100% - 24px));cursor:pointer}
+body:not(.walking):not(.placing) #toast.show{pointer-events:auto}
+body:not(.walking):not(.placing) #toast::after{content:'✕';position:absolute;right:9px;top:5px;font-size:11px;opacity:.55}
+#toast.show{opacity:1}
+/* a drawn building icon sits in the text like an emoji (engine.js SVGI) */
+.ico{width:1.05em;height:1.05em;vertical-align:-.15em;display:inline-block}
+#ov{position:fixed;inset:0;background:rgba(10,25,40,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:5}
+#ov .card{background:var(--panel);border-radius:16px;padding:22px 20px;max-width:420px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.4);max-height:90vh;overflow:auto}
+/* the tutorial's card open above a panel: the panel starts below it (tutorial.js ovRoom) */
+#ov .rsB{display:block;height:6px;margin-top:8px;border-radius:3px;background:rgba(216,180,94,.18);overflow:hidden}#ov .rsB i{display:block;height:100%;width:0;background:#d8b45e;border-radius:3px;transition:width 1s linear}#ov button.rsOn{border:1px solid rgba(216,180,94,.6)}#ov button.rsI{text-align:left}#ov .rsI>span{display:block}#ov .rsI>.rsE{margin:3px 0 2px}
+#ov .rsI>.rsP{float:right;margin:0 0 4px 10px;padding:2px 9px;border-radius:10px;background:rgba(216,180,94,.16);color:#ecd595;font-size:13px;font-weight:600;white-space:nowrap}#ov .rsI.pri>.rsP{background:rgba(0,0,0,.22);color:inherit}
+body.tgOv #ov{align-items:flex-start;padding-top:var(--tgH,16px);overflow:hidden}body.tgOv #ov .card{max-height:calc(100% - 4px)}
+/* during a case (weather.js caseMood) the cards turn to a dark police file: near-black paper, an oxblood edge, serif type */
+body.caseMood #ov{background:rgba(6,8,10,.72)}body.caseMood #ov .card{background:#15120f;color:#e8dcc2;border:1px solid #5e1f1d;box-shadow:0 14px 50px rgba(0,0,0,.75);font-family:Georgia,'Times New Roman',serif}body.caseMood #ov .card b{color:#d6b36a}body.caseMood #ov .card .btns{background:#15120f}body.caseMood #ov .card .x{background:#241b17;color:#e8dcc2}body.caseMood #job.case{background:rgba(21,18,15,.9);border-color:#5e1f1d;font-family:Georgia,'Times New Roman',serif}
+#ov ul{padding-left:18px;margin:8px 0;color:var(--muted);font-size:13.5px}
+progress{width:100%;height:8px;accent-color:var(--brass)}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+/* a street scene in progress: what is happening, and a way there; on foot, the Mayor's part in it */
+#scn{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:30;display:flex;gap:6px;align-items:center;background:rgba(18,24,32,.84);color:#efe6d2;border:1px solid rgba(216,180,94,.55);border-radius:12px;padding:6px 8px;font-size:14px;font-weight:600;max-width:calc(100% - 24px);box-shadow:0 3px 12px rgba(0,0,0,.35)}
+#scn[hidden]{display:none}
+#scnTxt{padding:0 4px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#scn button{background:rgba(216,180,94,.2);color:#efe6d2;border:1px solid rgba(216,180,94,.5);border-radius:9px;padding:6px 9px;font:inherit;font-size:13px;white-space:nowrap}
+body.walking #scn{bottom:auto;top:calc(62px + env(safe-area-inset-top,0px))}
+/* a scene asks first: the question on two lines, a way to go and a way to stay away */
+#scn.ask{flex-wrap:wrap;justify-content:center;width:min(340px,calc(100% - 24px));max-width:none;padding:8px 30px 9px}
+#scn.ask #scnTxt{white-space:normal;flex-basis:100%;text-align:center;font-size:15px;padding:0 4px 4px}
+/* the plain message is put away with a small round ✕ on its corner, which takes no room from the words; its touch area grows outwards only */
+#scn:not(.ask) #scnNo{top:-12px;right:-9px;border:1px solid rgba(216,180,94,.55);border-radius:50%;background:rgba(18,24,32,.96);font-size:12px;line-height:24px}
+#scn:not(.ask) #scnNo::after{content:'';position:absolute;top:-9px;right:-9px;bottom:0;left:0}
+/* the ✕ in the corner lets the scene pass (it ends its own way) */
+#scn #scnNo{position:absolute;top:4px;right:4px;width:26px;height:26px;padding:0;border:0;background:transparent;font-size:15px;line-height:26px;color:#cfc4ad}
+/* word from City Hall while the Mayor is out on foot: the alert a messenger brings, and the satchel of matters that can wait */
+#msg{position:absolute;left:50%;top:calc(62px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:33;width:min(380px,calc(100% - 24px));background:rgba(28,22,16,.94);color:#efe6d2;border:1px solid rgba(216,180,94,.75);border-radius:14px;padding:10px 12px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.5);text-align:center}
+#msg small{display:block;font:600 11px system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#d8b45e;margin-bottom:3px}
+#msg b{display:block;font:600 16px/1.3 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;margin-bottom:8px}
+#msg .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+#msg button,#msgN{background:rgba(216,180,94,.2);color:#efe6d2;border:1px solid rgba(216,180,94,.5);border-radius:9px;padding:7px 11px;font:600 13px system-ui,sans-serif;touch-action:pan-x pan-y}
+#msg button:first-child{background:rgba(216,180,94,.42)}
+#msgN{position:absolute;right:10px;top:calc(62px + env(safe-area-inset-top,0px));z-index:31;box-shadow:0 3px 12px rgba(0,0,0,.35);background:rgba(28,22,16,.9)}
+#msg[hidden],#msgN[hidden]{display:none}
+/* on a phone the message card takes the scene card's place, below the walk map and the street's name; and only one card shows at a time:
+   while a message waits for its answer, a scene's or a job's card waits behind it (engine.js msgTick also holds a message while a scene asks) */
+@media (max-width:700px){body.walking #msg{top:calc(160px + env(safe-area-inset-top,0px))}}
+body.walking:has(#msg:not([hidden])) #scn,body.walking:has(#msg:not([hidden])) #job{display:none!important}
+/* on foot the satchel of waiting letters sits in the top row between the Map button and the walk map, never on the map */
+body.walking #msgN{right:calc(136px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px))!important}
+body:not(.walking) #msg,body:not(.walking) #msgN,body.photo #msg,body.photo #msgN{display:none!important}
+#wk #wkAct{top:auto;left:auto;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(48px + env(safe-area-inset-bottom,0px));height:auto;max-width:calc(100% - 190px);text-align:left;padding:12px 16px;border-radius:14px;font-size:16px!important;font-weight:700;border-color:rgba(216,180,94,.8)}
+#wk #wkAct[hidden]{display:none}
+/* boarding a car, an omnibus or a ferry: above the scene's button, or in its place when there is none */
+#wk #wkRide{top:auto;left:auto;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(150px + env(safe-area-inset-bottom,0px));height:auto;max-width:calc(100% - 190px);padding:12px 16px;border-radius:14px;font-size:16px!important;font-weight:700;border-color:rgba(216,180,94,.8);text-align:left}
+#wk #wkAct[hidden]~#wkRide{bottom:calc(48px + env(safe-area-inset-bottom,0px))}
+#wk #wkRide[hidden]{display:none}
+#wkDest{position:absolute;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(176px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-height:calc(100% - 260px);overflow-y:auto;max-width:calc(100% - 190px)}
+#wkDest[hidden]{display:none}
+#wkDest div{font-size:14px;font-weight:700;color:#efe6d2;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+#wk #wkDest button{position:static;height:auto;padding:9px 14px;text-align:right;font-size:15px!important}
+#wk #wkRide:disabled{opacity:.7;font-weight:600;border-color:rgba(216,180,94,.4)}
+/* the 3D view sits where the flat map was; the flat canvas stays only for the engine's sizing */
+#c{visibility:hidden;pointer-events:none}
+#g3{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+.lowend #vig{display:block!important}
+#tags{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+/* gold stars for a step of the tutorial that was just completed: twelve small stars fly up from the building that did it (#fx,
+   on the map) or from the top of the advisor's card (#tgStars). Strong gold with a glow, so they show on pale roofs by day as
+   well. Only the place, the size and the fading move, so it costs a phone almost nothing */
+#fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}#fx>div{position:absolute;width:0;height:0;display:none}#fx>div.go{display:block}
+body.inhome #fx,body.walking #fx,body.photo #fx,body.instudy #fx{display:none!important}
+#tgStars{position:fixed;z-index:48;width:0;height:0;pointer-events:none;display:none;--r:46px}#tgStars.go{display:block}
+.sb b{position:absolute;left:-18px;top:-18px;width:36px;height:36px;border-radius:50%;background:radial-gradient(circle,rgba(255,206,80,.95) 0,rgba(255,172,40,.6) 34%,rgba(255,160,30,0) 70%);opacity:0;--s:1}
+.sb b::before{content:'';position:absolute;inset:3px;background:radial-gradient(circle,#fffdf0 0,#ffe27a 42%,#f2b233 100%);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
+.sb.go b{animation:fxSpk 1.25s cubic-bezier(.15,.8,.3,1) forwards}.sb b:nth-of-type(n+7){--s:.68}.sb.go b:nth-of-type(n+7){animation-delay:.09s}
+.sb b:nth-of-type(1){--a:-64deg;--d:1.5}.sb b:nth-of-type(2){--a:-38deg;--d:2.1}.sb b:nth-of-type(3){--a:-12deg;--d:1.7}.sb b:nth-of-type(4){--a:14deg;--d:2.2}.sb b:nth-of-type(5){--a:40deg;--d:1.8}.sb b:nth-of-type(6){--a:66deg;--d:1.45}.sb b:nth-of-type(7){--a:-88deg;--d:1.15}.sb b:nth-of-type(8){--a:88deg;--d:1.15}.sb b:nth-of-type(9){--a:-51deg;--d:1.1}.sb b:nth-of-type(10){--a:-25deg;--d:1.25}.sb b:nth-of-type(11){--a:27deg;--d:1.2}.sb b:nth-of-type(12){--a:53deg;--d:1.05}
+@keyframes fxSpk{0%{transform:rotate(var(--a)) translateY(0) scale(calc(.4*var(--s)));opacity:0}8%{opacity:1}24%{transform:rotate(var(--a)) translateY(calc(var(--r)*-.62*var(--d))) scale(calc(1.1*var(--s)))}72%{opacity:1}100%{transform:rotate(var(--a)) translateY(calc(var(--r)*-1*var(--d))) scale(calc(.5*var(--s)));opacity:0}}
+#tags .f{position:absolute;transform:translate(-50%,-100%);font:600 13px system-ui,sans-serif;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.7);white-space:nowrap}
+.gfl{display:inline-block;width:1.2em;height:1.2em;vertical-align:-.24em;overflow:hidden;white-space:nowrap;text-indent:3em;color:transparent;font-style:normal;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7.2 8.2C4 12 3.4 18 5.6 21.4Q12 23.4 18.4 21.4C20.6 18 20 12 16.8 8.2Z' fill='%23e6d6ae' stroke='%235a4526' stroke-width='1.3' stroke-linejoin='round'/%3E%3Cpath d='M7.2 8.2L5.4 3.2Q8.6 4.8 12 3.6Q15.4 4.8 18.6 3.2L16.8 8.2Z' fill='%23d2bf92' stroke='%235a4526' stroke-width='1.3' stroke-linejoin='round'/%3E%3Cpath d='M6.6 8.2H17.4' stroke='%238a4f22' stroke-width='2.2' stroke-linecap='round'/%3E%3Cpath d='M12 19.6V12.4' stroke='%239a6a22' stroke-width='1.1' stroke-linecap='round'/%3E%3Cg fill='%23b9852c'%3E%3Cellipse cx='10.3' cy='13.4' rx='1.1' ry='1.9' transform='rotate(-28 10.3 13.4)'/%3E%3Cellipse cx='13.7' cy='13.4' rx='1.1' ry='1.9' transform='rotate(28 13.7 13.4)'/%3E%3Cellipse cx='10.3' cy='16.6' rx='1.1' ry='1.9' transform='rotate(-28 10.3 16.6)'/%3E%3Cellipse cx='13.7' cy='16.6' rx='1.1' ry='1.9' transform='rotate(28 13.7 16.6)'/%3E%3Cellipse cx='12' cy='11.2' rx='1' ry='1.8'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat}
+.gfl.gwh{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='10.4' r='8' fill='none' stroke='%234e3216' stroke-width='4.4'/%3E%3Ccircle cx='12' cy='10.4' r='8' fill='none' stroke='%23d6aa62' stroke-width='3'/%3E%3Cpath d='M18.4 11.7L21.3 12.3M17.4 14.0L19.9 15.7M15.6 15.8L17.3 18.3M13.3 16.8L13.9 19.7M10.7 16.8L10.1 19.7M8.4 15.8L6.7 18.3M6.6 14.0L4.1 15.7M5.6 11.7L2.7 12.3M5.6 9.1L2.7 8.5M6.6 6.8L4.1 5.1M8.4 5.0L6.7 2.5M10.7 4.0L10.1 1.1M13.3 4.0L13.9 1.1M15.6 5.0L17.3 2.5M17.4 6.8L19.9 5.1M18.4 9.1L21.3 8.5' stroke='%236a4420' stroke-width='1'/%3E%3Ccircle cx='12' cy='10.4' r='6.3' fill='none' stroke='%238a5c2a' stroke-width='.7'/%3E%3Cpath d='M12.0 10.4L16.4 14.8M12.0 10.4L7.6 14.8M12.0 10.4L7.6 6.0M12.0 10.4L16.4 6.0' stroke='%234e3216' stroke-width='2.6'/%3E%3Cpath d='M12.0 10.4L16.4 14.8M12.0 10.4L7.6 14.8M12.0 10.4L7.6 6.0M12.0 10.4L16.4 6.0' stroke='%23b98646' stroke-width='1.4'/%3E%3Ccircle cx='12' cy='10.4' r='1.9' fill='%23e0b872' stroke='%234e3216' stroke-width='1'/%3E%3Cpath d='M0 17.4q3-2 6 0t6 0 6 0 6 0V24H0Z' fill='%234f86a8'/%3E%3Cpath d='M.6 17.6q2.7-1.8 5.4 0t6 0 6 0 5.4 0M3 21q2.2-1.2 4.4 0M12.5 21.2q2.2-1.2 4.4 0' fill='none' stroke='%23a9d0e4' stroke-width='1' stroke-linecap='round'/%3E%3C/svg%3E")}
+.gfl.gbr{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.6 2.6H17.4Q21 12 17.4 21.4H6.6Q3 12 6.6 2.6Z' fill='%23c08a48' stroke='%234e3216' stroke-width='1.3' stroke-linejoin='round'/%3E%3Cpath d='M9.6 3.2Q7.6 12 9.6 20.8M14.4 3.2Q16.4 12 14.4 20.8M12 3.2V20.8' fill='none' stroke='%238a5c2a' stroke-width='.9'/%3E%3Cpath d='M5.5 6.4H18.5M4.7 12H19.3M5.5 17.6H18.5' stroke='%233c3a3c' stroke-width='2.3'/%3E%3Cpath d='M5.5 6.4H18.5M4.7 12H19.3M5.5 17.6H18.5' stroke='%239a9690' stroke-width='.8'/%3E%3Ccircle cx='12' cy='14.8' r='1.2' fill='%234e3216'/%3E%3C/svg%3E")}
+.gfl.gkn{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10.4 5.2q-1.6-1.4-.2-2.6t.2-2.2' fill='none' stroke='%23b9b4ac' stroke-width='1.3' stroke-linecap='round'/%3E%3Cpath d='M3 22V16.5Q3 10.5 8.6 9L9.4 4.6H14.6L15.4 9Q21 10.5 21 16.5V22Z' fill='%23b4573a' stroke='%234a2014' stroke-width='1.3' stroke-linejoin='round'/%3E%3Cpath d='M9.1 6.8H14.9M5.2 12.2H18.8M3.4 15.4H20.6M3.4 18.6H8.4M15.6 18.6H20.6M8 9.4V12.2M12 12.2V15.4M16 9.4V12.2M6.4 15.4V18.6M17.6 15.4V18.6' stroke='%237a3220' stroke-width='.8'/%3E%3Cpath d='M8.6 22V18.4a3.4 3.4 0 0 1 6.8 0V22Z' fill='%232a1410' stroke='%234a2014' stroke-width='1'/%3E%3Cpath d='M10 22q-.6-2.4 2-4.4q2.6 2 2 4.4Z' fill='%23f2a23a'/%3E%3Cpath d='M11 22q-.2-1.4 1-2.4q1.2 1 1 2.4Z' fill='%23fbe08a'/%3E%3C/svg%3E")}
+.gfl.gco{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg stroke='%23b4b4c0' stroke-width='1.3' stroke-linejoin='round'%3E%3Cpath d='M7.6 10.2L12 2.4L18.6 4.6L19.4 11L13 13.6Z' fill='%2326262c'/%3E%3Cpath d='M1.2 17L4.2 10.6L11 10L13.6 15.4L10.6 21.8L3.6 21.8Z' fill='%231f1f25'/%3E%3Cpath d='M13 16L18 11.6L23 14.6L22.2 21L15.2 21.8Z' fill='%2326262c'/%3E%3C/g%3E%3Cpath d='M12 2.4L14 8.6L7.6 10.2ZM4.2 10.6L7.4 15.4L1.2 17ZM18 11.6L18 16.6L13 16Z' fill='%235c5c68'/%3E%3C/svg%3E")}
+.gfl.gst{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M1.6 22L3 14L8.6 11.4H19L22.4 16.4L21 22Z' fill='%23b3aea4' stroke='%234a4740' stroke-width='1.3' stroke-linejoin='round'/%3E%3Cpath d='M8.6 11.4L3 14L9 16L19 11.4Z' fill='%23d6d1c5'/%3E%3Cpath d='M9 16L8.4 22' stroke='%2377736a' stroke-width='1'/%3E%3Cpath d='M8.6 14.4L17.6 5.4' stroke='%233e2412' stroke-width='3.6' stroke-linecap='round'/%3E%3Cpath d='M8.6 14.4L17.6 5.4' stroke='%23c98f4a' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M13.4 1.4L22.6 10.6L19.2 13.8L10.2 4.6Z' fill='%238a94a0' stroke='%2323272c' stroke-width='1.3' stroke-linejoin='round'/%3E%3Cpath d='M13.8 3.4L20.6 10.2' stroke='%23d3dae2' stroke-width='1.1' stroke-linecap='round'/%3E%3C/svg%3E")}
+.gfl.gsh{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg transform='rotate(-34 12 13.6)'%3E%3Cpath d='M12 13.6V8.0' stroke='%23b9852c' stroke-width='1.1'/%3E%3Cellipse cx='12' cy='7.4' rx='1.5' ry='3' fill='%23e9bf4c' stroke='%238a5f16' stroke-width='.7'/%3E%3Cpath d='M12 5.0V9.6' stroke='%238a5f16' stroke-width='.6'/%3E%3C/g%3E%3Cg transform='rotate(-17 12 13.6)'%3E%3Cpath d='M12 13.6V6.8' stroke='%23b9852c' stroke-width='1.1'/%3E%3Cellipse cx='12' cy='6.2' rx='1.5' ry='3' fill='%23e9bf4c' stroke='%238a5f16' stroke-width='.7'/%3E%3Cpath d='M12 3.8V8.4' stroke='%238a5f16' stroke-width='.6'/%3E%3C/g%3E%3Cg transform='rotate(0 12 13.6)'%3E%3Cpath d='M12 13.6V6.2' stroke='%23b9852c' stroke-width='1.1'/%3E%3Cellipse cx='12' cy='5.6' rx='1.5' ry='3' fill='%23e9bf4c' stroke='%238a5f16' stroke-width='.7'/%3E%3Cpath d='M12 3.2V7.8' stroke='%238a5f16' stroke-width='.6'/%3E%3C/g%3E%3Cg transform='rotate(17 12 13.6)'%3E%3Cpath d='M12 13.6V6.8' stroke='%23b9852c' stroke-width='1.1'/%3E%3Cellipse cx='12' cy='6.2' rx='1.5' ry='3' fill='%23e9bf4c' stroke='%238a5f16' stroke-width='.7'/%3E%3Cpath d='M12 3.8V8.4' stroke='%238a5f16' stroke-width='.6'/%3E%3C/g%3E%3Cg transform='rotate(34 12 13.6)'%3E%3Cpath d='M12 13.6V8.0' stroke='%23b9852c' stroke-width='1.1'/%3E%3Cellipse cx='12' cy='7.4' rx='1.5' ry='3' fill='%23e9bf4c' stroke='%238a5f16' stroke-width='.7'/%3E%3Cpath d='M12 5.0V9.6' stroke='%238a5f16' stroke-width='.6'/%3E%3C/g%3E%3Cpath d='M9.6 13.2L5.6 22.6H18.4L14.4 13.2Z' fill='%23d9ab3c' stroke='%238a5f16' stroke-width='1' stroke-linejoin='round'/%3E%3Cpath d='M10.8 15L8.6 22.4M12 15V22.4M13.2 15L15.4 22.4' stroke='%23a87a22' stroke-width='.7'/%3E%3Cpath d='M8.8 13.6H15.2' stroke='%238a3f22' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E")}
+.gfl.gcw{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9.4' fill='none' stroke='%233a3834' stroke-width='4'/%3E%3Ccircle cx='12' cy='12' r='9.4' fill='none' stroke='%23cfc9bc' stroke-width='2.6'/%3E%3Ccircle cx='12' cy='12' r='7.4' fill='none' stroke='%238a2f22' stroke-width='1.3'/%3E%3Cpath d='M14.0 12.0L19.2 12.0M13.7 13.0L18.2 15.6M13.0 13.7L15.6 18.2M12.0 14.0L12.0 19.2M11.0 13.7L8.4 18.2M10.3 13.0L5.8 15.6M10.0 12.0L4.8 12.0M10.3 11.0L5.8 8.4M11.0 10.3L8.4 5.8M12.0 10.0L12.0 4.8M13.0 10.3L15.6 5.8M13.7 11.0L18.2 8.4' stroke='%238a2f22' stroke-width='1.2'/%3E%3Ccircle cx='12' cy='12' r='2.6' fill='%23d8b455' stroke='%236a4f18' stroke-width='.9'/%3E%3Ccircle cx='12' cy='12' r='.9' fill='%236a4f18'/%3E%3C/svg%3E")}
+.gfl.gpi{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.6 7.6q-1.8-1.6-.2-3t.2-3' fill='none' stroke='%23c9c4bb' stroke-width='1.3' stroke-linecap='round'/%3E%3Cpath d='M9 19Q16 20.4 22.6 11.4' fill='none' stroke='%233e2412' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M9 19Q16 20.4 22.6 11.4' fill='none' stroke='%239a5f34' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M17.2 17.3Q20.4 15 22.6 11.4' fill='none' stroke='%2377726a' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M17.2 17.3Q20.4 15 22.6 11.4' fill='none' stroke='%2326211e' stroke-width='2.6' stroke-linecap='round'/%3E%3Cpath d='M16.6 15.8L18.4 18.6' stroke='%23d8b455' stroke-width='1.3'/%3E%3Cpath d='M2.4 9.8H11L10.6 17Q10.2 21.4 6.7 21.4T2.8 17Z' fill='%239a5f34' stroke='%233e2412' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M2.2 9.8H11.2' stroke='%233e2412' stroke-width='2.2' stroke-linecap='round'/%3E%3Cpath d='M4.5 12.4L4.8 16.6Q5 18.4 6 19' fill='none' stroke='%23c98a55' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E")}
+.gfl.gbn{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.4 22V11.2L7 6.4L12 3.8L17 6.4L20.6 11.2V22Z' fill='%23a8452f' stroke='%234a1c12' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M1.8 12L6.4 5.8L12 2.9L17.6 5.8L22.2 12' fill='none' stroke='%2334261f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10.3 7.6H13.7V11H10.3Z' fill='%232a1410' stroke='%23f0e6d0' stroke-width='.9'/%3E%3Cpath d='M7.6 22V14H16.4V22Z' fill='%237a2e1e' stroke='%23f0e6d0' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M7.6 14L16.4 22M16.4 14L7.6 22' stroke='%23f0e6d0' stroke-width='1'/%3E%3C/svg%3E")}
+#tags .bd{position:absolute;transform:translate(-50%,-100%);width:27px;height:27px;border-radius:50%;background:#f6efe0;border:3px solid #c0392b;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+/* every button shows at once that it was pressed */
+button{transition:transform .08s ease,filter .08s ease,box-shadow .08s ease}
+button:active,button.tap{transform:scale(.93);filter:brightness(1.3);box-shadow:0 0 0 2px #d9a92a inset}
+/* the tips bubble is light in both themes, so its buttons need their own colours */
+#tut button{background:#efe7d6;color:#2a2522;border-color:#cbbd9f}#tut button.pri{background:#d9a92a;color:#1d1b1a;border-color:#d9a92a}
+#tags .bd{pointer-events:auto;cursor:pointer}#tags .bd.up{background:#2f9e4a;border-color:#fff;color:#fff;font:800 13px system-ui,sans-serif}#tags .bd.st{background:#c9a227;border-color:#fff;font-size:13px}#tags .bd.up.dim{background:#5d6b60;border-color:#c9c2b2;color:#e6e0d2}#tags .bd.up.sm{transform:translate(-50%,-100%) scale(.7)}
+#tags .bd.nr{background:#f6efe0;border-color:#d9a92a;width:28px;height:28px;font-size:15px}
+/* taps on the bars register at once on iPhones, and the rows still scroll sideways */
+.row,#cats,#subs,#builds{touch-action:pan-x}#bar button,#ov button,#info button,#mode button,#conf button,#zb button{touch-action:pan-x pan-y}
+/* phones: more map, less chrome */
+@media (max-width:600px){
+ #goals{width:172px;top:6px;left:6px;gap:2px;padding:3px}
+ #goals .gl{padding:2px 5px}
+ #goals .gt b{font-size:11.5px}
+ #goals .gt small{font-size:10.5px}
+ #mini{transform:scale(.58);transform-origin:top right}
+ #zb{top:66px}
+ #mode{bottom:4px;left:4px;right:4px;padding:5px 8px;gap:6px;font-size:12.5px;line-height:1.3}
+ #modeTxt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:1 1 60%}
+ #mode.open #modeTxt{display:block}
+ #mode button{padding:4px 9px}
+ #bar{padding:4px 6px calc(4px + env(safe-area-inset-bottom))}
+ .row{margin-top:4px}
+ #bar .ctl{padding:4px 8px;font-size:12.5px}
+ #cats .cat{padding:3px 4px 5px;font-size:11px;min-width:58px}
+ .bb{width:126px;min-height:42px;padding:3px 5px 3px 4px;gap:4px}
+ .bb .c{font-size:10.5px;letter-spacing:-.2px}
+ .bb .bi{font-size:19px;width:22px}
+ .bb .bt b{font-size:12px}
+ #subs .cat{padding:3px 8px;font-size:11.5px}
+}
+@media (pointer:coarse){#zIn,#zOut{display:none}}
+/* small goals at the left edge: a dark glass card that reads over the day and the night city alike */
+#goals{position:absolute;left:8px;top:8px;width:218px;max-width:calc(50vw - 12px);display:flex;flex-direction:column;gap:3px;padding:4px;border-radius:12px;background:rgba(18,24,32,.66);border:1px solid rgba(216,180,94,.35);box-shadow:0 3px 12px rgba(0,0,0,.28);color:#efe6d2;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);z-index:3}
+#goals[hidden]{display:none}
+#goals .gl.req{box-shadow:inset 2px 0 0 #d8b45e}
+/* "Not enough bricks" and the two ways out, at the top edge so the building site stays in view */
+#lack{position:absolute;left:50%;top:calc(6px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:34;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;width:max-content;max-width:min(400px,calc(100% - 16px));background:rgba(28,22,16,.92);color:#efe6d2;border:1px solid rgba(216,180,94,.6);border-radius:12px;padding:6px 8px;box-shadow:0 4px 14px rgba(0,0,0,.35);font:600 13px system-ui,sans-serif}
+#lack[hidden],#nudge[hidden]{display:none}
+#nudge{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:33;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;width:max-content;max-width:min(400px,calc(100% - 16px));background:rgba(28,22,16,.92);color:#efe6d2;border:1px solid rgba(216,180,94,.6);border-radius:12px;padding:6px 8px;box-shadow:0 4px 14px rgba(0,0,0,.3);font:13px system-ui,sans-serif}
+#nudge button{background:rgba(216,180,94,.42);color:#efe6d2;border:1px solid rgba(216,180,94,.5);border-radius:9px;padding:6px 9px;font:600 13px system-ui,sans-serif;white-space:nowrap;touch-action:pan-x pan-y}
+#nudge #nudgeX{background:transparent;border-color:transparent;padding:6px}#nudgeTxt{padding:0 4px}
+.x{position:sticky;top:0;float:right;z-index:3;width:34px;height:34px;padding:0;margin:-6px -8px 0 8px;border-radius:10px;font-size:16px;line-height:1;background:var(--panel);border:1px solid var(--line)}
+#ov .card .x{margin:-14px -12px 0 8px}
+.stepL,.gameL{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.stepL button{display:flex;align-items:center;gap:10px;text-align:left;opacity:.5}.stepL button.on{opacity:1;border:1px solid var(--bad)}
+.stepL i{font-style:normal;min-width:1.3em;color:var(--muted)}.stepL span{flex:1}.stepL em{font-style:normal;color:var(--bad)}
+.gRow{display:flex;gap:6px;align-items:stretch}.gRow .gGo{flex:1;min-width:0;text-align:left;display:flex;flex-direction:column;gap:3px}.gRow.on .gGo{border:1px solid var(--brass)}
+.gRow small{color:var(--muted);font-size:12.5px;font-weight:500}.gRow small.gNow{color:var(--brass)}
+#gName{width:100%;box-sizing:border-box;font:inherit;font-size:17px;padding:10px;border-radius:8px;background:var(--chip);color:var(--ink);border:1px solid var(--line);user-select:text;-webkit-user-select:text}
+#hint{display:none!important}.panel>.btns[hidden]{display:none}.panel>.btns{position:sticky;bottom:-12px;background:var(--panel);margin:6px -14px -12px;padding:8px 14px 12px;border-top:1px solid var(--line)}
+#ov .card>.btns:last-child{position:sticky;bottom:-22px;background:var(--panel);margin-bottom:-22px;padding:8px 0 16px}
+.stl{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:2px 0 6px;font-weight:600}.stl button{padding:5px 10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}.chips span{background:rgba(216,180,94,.16);border:1px solid rgba(216,180,94,.3);border-radius:8px;padding:3px 8px;font-size:13px;white-space:nowrap}
+#infoActs:empty{display:none}#infoActs{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+#infoDet summary{cursor:pointer;color:var(--brass);font-weight:600;padding:4px 0}
+#zb{align-items:flex-end}
+.x,.sheet .shx,#lack #lackX,#nudge #nudgeX{width:34px;height:34px;min-width:0;min-height:0;padding:0;display:inline-flex;align-items:center;justify-content:center;flex:none;font-size:15px;line-height:1;border-radius:10px;text-align:center}
+#lack #lackX,#nudge #nudgeX{border:1px solid rgba(216,180,94,.4);background:transparent;color:#efe6d2}
+#buildBtn i{filter:drop-shadow(0 0 1px rgba(29,27,26,.9)) drop-shadow(0 1px 1px rgba(29,27,26,.6))}
+#res .chip.sp{flex:none;background:rgba(216,180,94,.18);border:1px solid rgba(216,180,94,.45)}
+#stores{display:flex;flex-wrap:nowrap;gap:6px;align-items:center;white-space:nowrap;font-size:14px;color:var(--muted);padding:3px 4px 0;cursor:pointer;font-variant-numeric:tabular-nums}
+#stores:empty{display:none}#stores .low{color:var(--bad);font-weight:700}
+/* each part of the strip is its own target: the smiley, the stores, each good */
+#stores>*{padding:4px 3px;border-radius:7px}#stores.open{flex-wrap:wrap;white-space:normal;-webkit-mask-image:none;mask-image:none;row-gap:0}#stores>*:active{background:rgba(216,180,94,.18)}
+.bb .c .lack{color:#e88a78}#stores b{color:var(--ink);font-weight:600}
+#stores .lager{display:flex;align-items:center;gap:6px;min-width:0;padding:0 6px 0 0;border:1px solid rgba(216,180,94,.38);border-radius:9px;background:rgba(216,180,94,.07)}
+#stores .lager{flex:0 1 auto;flex-wrap:nowrap;overflow:hidden;max-width:100%}#stores .lager>*{flex:none}#stores.open .lager{flex-wrap:wrap;row-gap:0}
+#stores .lager b[data-more]{padding:4px 5px;border-radius:7px;color:var(--brass)}#stores .lager b[data-more].low{color:var(--bad)}
+#stores .lager>span{padding:4px 3px;border-radius:7px}#stores .lager>span:active{background:rgba(216,180,94,.18)}
+#stores .lager b[data-st]{display:inline-flex;align-items:center;gap:4px;align-self:stretch;padding:3px 7px 3px 6px;border-right:1px solid rgba(216,180,94,.38);border-radius:8px 0 0 8px;background:rgba(216,180,94,.12);color:var(--brass)}
+#stores .lager svg{width:17px;height:15px;flex:none}
+#stores .lager b[data-trade]{margin:3px 0 3px auto;padding:3px 10px;border:1px solid rgba(216,180,94,.6);border-radius:14px;background:rgba(216,180,94,.14);color:var(--brass)}
+.gbar{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13px;font-variant-numeric:tabular-nums}.gbar div{display:flex;flex-direction:column;gap:2px}.gbar span{display:flex;justify-content:space-between}
+.gbar i{display:block;height:4px;border-radius:2px;background:var(--chip);overflow:hidden}.gbar i b{display:block;height:100%;background:var(--good)}.gbar .low span{color:var(--bad);font-weight:600}.gbar .low i b{background:var(--bad)}.gbar.big{font-size:14px;gap:4px 10px}.gbar.big div{padding:5px 6px;border-radius:8px;cursor:pointer}.gbar.big i{height:6px;border-radius:3px}.gbar.big .sel{background:var(--chip);box-shadow:inset 0 0 0 1px var(--brass)}
+.why{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid var(--line);font-size:13.5px}.why button{flex:none;padding:5px 9px}.why small{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
+.finTabs{display:flex;gap:4px;background:var(--chip);border-radius:12px;padding:4px;margin:4px 0 10px}.finTabs button{flex:1;border:0;background:none;padding:9px 4px;font-weight:600;color:var(--muted);border-radius:9px;min-height:40px}.finTabs button.on{background:var(--brass);color:var(--panel)}
+.finTiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;border-radius:12px}.finTiles>div{background:var(--chip);border-radius:12px;padding:8px 11px}.finTiles span{display:block;font-size:12.5px;color:var(--muted)}.finTiles span i{float:right;font-style:normal;font-size:11.5px;opacity:.75}.finTiles b{display:block;font:700 23px Georgia,'Times New Roman',serif;font-variant-numeric:tabular-nums;white-space:nowrap}.finTiles b.sm{font-size:16px;padding-top:5px}.finTiles>div.neg{background:rgba(200,70,50,.16)}
+#ov:has(.finTabs){align-items:flex-start}#ov:has(.finTabs) .card{margin-top:4vh}.finT td+td{white-space:nowrap;padding-left:10px}
+
+.finCur{font-size:12px;color:var(--muted);margin:6px 0 0}.finWarn{margin:10px 0 0;font-size:15px}
+.finH{margin:14px 0 5px;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brass)}
+/* In & out: the income and the expenses each in a block of its own, its sum as the block's last row; the trend set apart below them */
+.finIO{display:grid;gap:8px;border-radius:12px}.finB{background:var(--chip);border-radius:12px;padding:8px 11px 5px}
+.finBh{font-weight:700;font-size:15.5px;padding-bottom:5px}
+.finSum b{font:700 20px Georgia,'Times New Roman',serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.finB .stat .finTot td{border-top:1.5px solid var(--muted);padding-top:5px;font-weight:700}.finB .stat .finTot td+td{font:700 19px Georgia,'Times New Roman',serif}
+.finB .stat{font-size:13.5px}.finB .stat td:first-child{padding-left:0}.finB .stat td+td{padding-right:0;vertical-align:top}
+.finSum{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;padding:10px 11px;border-radius:12px;border:1.5px solid var(--brass);background:rgba(216,180,94,.1)}
+.finSum span{font-weight:700;font-size:15.5px}.finSum b{font-size:24px}
+.finSum.neg{border-color:var(--bad);background:rgba(200,70,50,.16)}
+#mode.more #modeTxt{font-size:13.5px}#mode.more #modeTxt .again{display:block;margin-top:3px;color:var(--brass);font:700 15.5px system-ui,sans-serif}#mode.more #modeTxt .again.no2{color:var(--bad)}@media(max-width:700px){#mode.more #modeTxt{display:block}}.tab i.bbm{position:relative}.tab i.bbm b{position:absolute;right:-9px;top:-5px;font:700 13px/1 system-ui,sans-serif}.tab i.bbm i.gfl{position:static;font-size:inherit}
+.ppl{margin:5px 0;font-size:14px;line-height:1.35}.hbar{display:flex;gap:2px;height:10px;margin:8px 0 5px}.hbar i{border-radius:3px;min-width:0}.hbar .h1{background:var(--good,#7fb069)}.hbar .h2{background:var(--brass)}.hbar .h3{background:var(--bad)}.w1{background:var(--brass)}.w2{background:#6f9bb3}.w3{background:#7fa27a}.w4{background:#4f7a5c}.w5{background:#b0705a}.w6{background:#8a7f9c}.w7{background:#9aa0a8}.bleg{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;font-size:12.5px;margin:0 0 4px}.bleg b{font-weight:600}.wk{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}.hleg{display:flex;justify-content:space-between;gap:6px;font-size:12.5px;margin:0 0 4px}
+.taxT{font-size:14.5px}.taxT td{padding:9px 6px;text-align:right;white-space:nowrap}.taxT td:first-child{text-align:left;font-weight:600}.taxT tr.on td{background:rgba(216,180,94,.12)}.taxT tr.on td:first-child{color:var(--brass)}
+/* the ways to more money as one part, with a little room at its sides for the glow while the tutorial explains it */
+.finWays{margin:0 -6px;padding:0 6px;border-radius:12px}
+/* a part of the panel the tutorial is explaining: the pale line on its edge and the gold line round it, softer than a button to press */
+#ovCard .tgRing2{outline-offset:0;box-shadow:0 0 0 4px rgba(226,184,74,.75),0 0 12px 5px rgba(255,214,110,.45)!important}
+.finStep{display:flex;align-items:center;gap:10px;border:1.5px solid var(--brass);border-radius:12px;padding:10px 12px}.finStep i{font-style:normal;font-size:26px}.finStep>div{flex:1}.finStep small{display:block;color:var(--muted);font-size:12.5px}.finStep button{flex:none;padding:8px 14px}
+button.plain{background:transparent;border-color:transparent;color:var(--muted);font-size:13px;text-decoration:underline;padding:4px 2px}#zb button[hidden]{display:none!important}.tab.hl span,.tab.glow span{color:inherit}#zb #zWk{width:auto;padding:0 10px 0 6px;display:flex;align-items:center;gap:2px;font:700 14px system-ui,sans-serif}#zWk b{font-weight:700}
+#lackTxt{padding:0 4px}
+/* the shortage card: what is short on the first line beside its close button, the ways out side by side below; the goals step aside */
+#lack{width:min(380px,calc(100% - 16px));justify-content:stretch}#lack #lackTxt{flex:1 1 calc(100% - 48px);order:0;line-height:1.3}#lack #lackX{order:1}
+#lack #lackBuild,#lack #lackBuild2,#lack #lackTrade{order:2;flex:1 1 0;min-width:0;white-space:normal;line-height:1.25}
+body:has(#lack:not([hidden])) #goals{visibility:hidden}
+#lack button{background:rgba(216,180,94,.2);color:#efe6d2;border:1px solid rgba(216,180,94,.5);border-radius:9px;padding:6px 9px;font:600 13px system-ui,sans-serif;white-space:nowrap;touch-action:pan-x pan-y}
+#lack #lackBuild,#lack #lackBuild2{background:rgba(216,180,94,.42)}
+#lack #lackX{background:transparent;border-color:transparent;padding:6px}
+/* placing a building or a road: nothing covers the map, notes shrink to the top edge */
+body.placing #ov.held,body.placing #scn,body.placing #job,body.placing #jobMk,body.placing #say,body.placing #sayCard,body.placing #tags{display:none!important}
+/* walking: a small note high on the left, under the way back to the map and clear of the walk map, so the way ahead stays in view;
+   a tap on it closes it, and a tip once closed is not shown again */
+body.walking #toast{bottom:auto;top:calc(70px + env(safe-area-inset-top,0px));left:10px;transform:none;max-width:min(320px,calc(100% - 156px));font-size:12.5px;line-height:1.3;padding:5px 24px 5px 10px;text-align:left;cursor:pointer}
+body.walking #toast.show{pointer-events:auto}
+body.walking #toast::after{content:'✕';position:absolute;right:8px;top:5px;font-size:11px;opacity:.55}
+body.placing #toast{bottom:auto;top:calc(4px + env(safe-area-inset-top,0px));padding:3px 10px;font-size:12px;max-width:min(360px,70%)}
+body.placing #lack~#toast{top:calc(56px + env(safe-area-inset-top,0px))}
+/* while placing, the goals step aside so the short note at the top edge has the room */
+body.placing #goals{visibility:hidden}
+/* the Mayor in frock coat and top hat on the walk button */
+.mayor{display:block;width:28px;height:28px;margin:auto;overflow:visible}
+#zWk .mayor{filter:drop-shadow(0 0 .5px rgba(244,239,226,.8))}
+#goals button{touch-action:pan-x pan-y;background:none;border:0;color:inherit;text-align:left;border-radius:8px;padding:3px 6px}
+#goals .gh{display:flex;align-items:center;gap:5px;font:600 11.5px system-ui;letter-spacing:.3px;color:#d8b45e;padding:2px 6px}
+#goals .gh span{margin-left:auto;opacity:.8}
+#goals .gh b{background:#d8b45e;color:#1d1b1a;border-radius:8px;padding:0 5px;font-size:10.5px}
+#goals.col{width:auto;padding:2px}
+#goals .gl{display:flex;gap:6px;align-items:flex-start;width:100%;background:rgba(255,255,255,.05)}
+#goals .gi{flex:none;font-size:14px;line-height:18px}
+#goals .gt{flex:1;min-width:0;display:flex;flex-direction:column}
+#goals .gt b{font:600 12.5px/1.25 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#goals .gt small{font-size:11px;color:#b9b0a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+#goals .gt i{display:block;height:2px;margin-top:3px;border-radius:1px;background:#d8b45e;min-width:2px}
+/* money that really came in rises over homes and shops for a moment; costs in a muted red */
+#tags .f.mp{font:700 12.5px system-ui,sans-serif;color:#f1d98a;text-shadow:0 1px 2px rgba(0,0,0,.85),0 0 6px rgba(0,0,0,.35)}
+#tags .f.mn{font:600 12px system-ui,sans-serif;color:#d98f80;text-shadow:0 1px 2px rgba(0,0,0,.85)}
+/* walking the city: the map's bars give way to the street; a way back, a change of view and, on touch screens, a stick to walk */
+#wk{display:none}
+/* the Mayor's house: the door in the street, and the rooms inside (home.js) */
+#wk #wkHome{top:auto;left:50%;transform:translateX(-50%);bottom:calc(176px + env(safe-area-inset-bottom,0px));height:auto;padding:12px 16px;border-radius:14px;font-size:16px!important;font-weight:700;border-color:rgba(216,180,94,.8)}
+#wk #wkHome[hidden]{display:none}
+#home{position:absolute;inset:0;z-index:4;touch-action:none;user-select:none;-webkit-user-select:none}
+#home[hidden],body.inhome #wk{display:none!important}
+body.inhome #top,body.inhome #bar,body.inhome #zb,body.inhome #mini,body.inhome #goals,body.inhome #tags,body.inhome #mode,body.inhome #conf,body.inhome #info,body.inhome #trade,body.inhome #tut,body.inhome #planCred,body.inhome #scn,body.inhome #job,body.inhome #msg,body.inhome #msgN{display:none!important}
+#homeT{position:absolute;left:0;right:0;top:calc(10px + env(safe-area-inset-top,0px));display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;padding:0 10px}
+#homeT span{color:#efe6d2;font-weight:700;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.8);padding:0 6px}
+#home button{height:auto;padding:9px 13px;border-radius:12px;font-size:15px;font-weight:600;background:rgba(18,24,32,.7);color:#efe6d2;border:1px solid rgba(216,180,94,.45);box-shadow:0 3px 12px rgba(0,0,0,.28);touch-action:pan-x pan-y}
+#home button.on{background:rgba(216,180,94,.62);border-color:rgba(255,226,150,.95);color:#1a1410}
+#home button:disabled{opacity:.6}
+#homeB{position:absolute;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:0 10px}
+#homeP{position:absolute;right:calc(10px + env(safe-area-inset-right,0px));top:calc(64px + env(safe-area-inset-top,0px));bottom:calc(74px + env(safe-area-inset-bottom,0px));width:min(330px,calc(100% - 20px));overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:14px;background:rgba(14,18,24,.82);color:#efe6d2;font-size:14px}
+#homeP[hidden]{display:none}
+#homeP button{text-align:left}
+@media (max-width:520px){#home button{padding:8px 10px;font-size:14px}#homeP{top:calc(104px + env(safe-area-inset-top,0px));bottom:calc(112px + env(safe-area-inset-bottom,0px))}}
+body.walking #wk{display:block}
+body.walking #top,body.walking #bar,body.walking #zb,body.walking #mini,body.walking #goals,body.walking #tags,body.walking #mode,body.walking #conf,body.walking #info,body.walking #trade,body.walking .panel,body.walking #tut,body.walking #planCred{display:none!important}
+#wk button{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));height:42px;border-radius:12px;font-size:15px;font-weight:600;background:rgba(18,24,32,.66);color:#efe6d2;border:1px solid rgba(216,180,94,.45);box-shadow:0 3px 12px rgba(0,0,0,.28);touch-action:pan-x pan-y;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#wkExit{left:10px;padding:0 14px}
+#wkStick{position:absolute;left:calc(22px + env(safe-area-inset-left,0px));bottom:calc(26px + env(safe-area-inset-bottom,0px));width:156px;height:156px;border-radius:50%;background:rgba(18,24,32,.32);border:2px solid rgba(216,180,94,.45);touch-action:none}
+/* the street map on foot and riding (walkmap.js): a round plan in the top corner, the street's name under it, a larger plan on a tap; on a narrow screen the case and scene bars move down below it */
+#wkMap{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));width:116px;height:116px;border-radius:50%;box-shadow:0 3px 12px rgba(0,0,0,.4);background:#d6ccb0;cursor:pointer;touch-action:manipulation}
+#wkSt{position:absolute;top:calc(132px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));width:116px;box-sizing:border-box;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:600 12px/1.25 Georgia,serif;color:#f3e7c8;background:rgba(18,24,32,.72);border:1px solid rgba(216,180,94,.45);border-radius:10px;padding:3px 6px;pointer-events:none}#wkSt[hidden]{display:none}
+#wkBig{position:absolute;inset:0;z-index:45;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(8,10,12,.62)}#wkBig[hidden]{display:none}
+#wkBig canvas{width:min(92vw,72vh,560px);height:min(92vw,72vh,560px);border-radius:14px;border:2px solid rgba(216,180,94,.7);box-shadow:0 8px 30px rgba(0,0,0,.5)}#wkBig small{font:600 13px/1 Georgia,serif;color:#f3e7c8}#wkBig b{padding:10px 24px;border-radius:11px;border:1px solid rgba(216,180,94,.7);background:rgba(22,26,32,.85);color:#f3e7c8;font:600 15px/1 system-ui,sans-serif}
+#wkStick::before{content:'';position:absolute;inset:-44px;border-radius:50%}
+#wkStick i{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:rgba(216,180,94,.6);box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:none}
+#wkStick svg{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:rgba(216,180,94,.7);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+#wkStick em{position:absolute;left:0;bottom:calc(100% + 12px);white-space:nowrap;font:600 14px/1 Georgia,serif;font-style:normal;color:#f3e7c8;background:rgba(18,24,32,.78);border:1px solid rgba(216,180,94,.55);border-radius:14px;padding:8px 12px;opacity:0;transition:opacity .6s;pointer-events:none}
+#wkStick.hint em{opacity:1}
+#wkStick b{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);white-space:nowrap;font:600 13px/1 system-ui,sans-serif;color:#f3e7c8;background:rgba(18,24,32,.78);border:1px solid rgba(216,180,94,.55);border-radius:10px;padding:4px 9px;pointer-events:none}#wkStick b[hidden]{display:none}#wkStick.hint i{animation:wkNudge 2.6s ease-in-out infinite}#wkStick.hint svg{animation:wkGlow 1.3s ease-in-out infinite alternate}
+@keyframes wkNudge{0%,100%{transform:none}20%{transform:translateY(-26px)}40%{transform:none}60%{transform:translateX(26px)}80%{transform:none}}
+@keyframes wkGlow{to{stroke:rgba(243,231,200,1)}}
+@media (pointer:fine){#wkStick{display:none}}
+/* photographs: the viewfinder hides the game's bars and keeps a few controls; on foot the stick stays to walk into the picture */
+body.photo #top,body.photo #bar,body.photo #zb,body.photo #mini,body.photo #goals,body.photo #tags,body.photo #mode,body.photo #conf,body.photo #info,body.photo #trade,body.photo .panel,body.photo #tut,body.photo #planCred,body.photo #scn,body.photo #vig,body.photo #wkExit,body.photo #wkView,body.photo #wkPh,body.photo #wkAct{display:none!important}
+#ph{position:absolute;inset:0;z-index:40;pointer-events:none}
+#ph[hidden],#phAlb[hidden],#phView[hidden],#phShare[hidden]{display:none}
+#ph button{pointer-events:auto;touch-action:pan-x pan-y;background:rgba(18,24,32,.66);color:#efe6d2;border:1px solid rgba(216,180,94,.45);border-radius:12px;box-shadow:0 3px 12px rgba(0,0,0,.28);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#phVig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 58%,rgba(20,12,4,.42) 100%)}
+#stage[data-look=gla] #phVig{background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 48%,rgba(4,6,8,.6) 100%)}
+#stage[data-look=col] #phVig{background:none}
+#stage[data-look=alb] #g3,#stage[data-look=ste] #g3{filter:sepia(.8) saturate(.85) contrast(1.04)}
+#stage[data-look=gla] #g3{filter:grayscale(1) contrast(1.22) brightness(.96)}
+#phC{position:absolute;inset:calc(64px + env(safe-area-inset-top,0px)) 14px calc(118px + env(safe-area-inset-bottom,0px));border:1px solid rgba(239,230,210,.28)}
+#phC i{position:absolute;width:22px;height:22px;border:solid rgba(239,230,210,.85);border-width:0}
+#phC i:nth-child(1){left:-1px;top:-1px;border-left-width:2px;border-top-width:2px}#phC i:nth-child(2){right:-1px;top:-1px;border-right-width:2px;border-top-width:2px}
+#phC i:nth-child(3){left:-1px;bottom:-1px;border-left-width:2px;border-bottom-width:2px}#phC i:nth-child(4){right:-1px;bottom:-1px;border-right-width:2px;border-bottom-width:2px}
+#phSq{display:none;position:absolute;left:50%;top:50%;width:min(100%,96vh);aspect-ratio:1/1.04;max-height:100%;transform:translate(-50%,-50%);border:1px dashed rgba(239,230,210,.45)}
+#stage[data-look=ste] #phSq{display:block}
+#phX{position:absolute;left:10px;top:calc(10px + env(safe-area-inset-top,0px));width:42px;height:42px;padding:0;font-size:18px}
+#phLooks{position:absolute;left:60px;right:10px;top:calc(10px + env(safe-area-inset-top,0px));display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+#phLooks button{height:34px;padding:0 10px;font-size:13px;font-weight:600;white-space:nowrap}
+@media (max-width:480px){#phLooks{gap:4px}#phLooks button{height:32px;padding:0 7px;font-size:12px}}
+#phLooks button.on{background:#d8b45e;color:#1d1b1a;border-color:#d8b45e}
+#phCap{position:absolute;left:12px;right:12px;bottom:calc(96px + env(safe-area-inset-bottom,0px));text-align:center;font:italic 15px/1.3 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;color:#efe6d2;text-shadow:0 1px 3px rgba(0,0,0,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#phShut{position:absolute;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:70px;height:70px;margin-left:-35px;border-radius:50%!important;padding:0;background:rgba(239,230,210,.9)!important;border:4px solid rgba(18,24,32,.7)!important;box-shadow:0 0 0 3px rgba(239,230,210,.75),0 4px 14px rgba(0,0,0,.4)!important}
+#phAlbBtn{position:absolute;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(26px + env(safe-area-inset-bottom,0px));width:54px;height:54px;padding:0;font-size:22px;background-size:cover!important;background-position:center!important}
+#phAlbBtn.new{animation:phNew .5s ease-out}
+@keyframes phNew{from{transform:scale(1.6) translateY(-40px);opacity:.3}}
+#phAlb{position:absolute;left:8px;right:8px;bottom:calc(122px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;overflow-x:auto;padding:6px;border-radius:12px;background:rgba(18,24,32,.72);pointer-events:auto;touch-action:pan-x;scrollbar-width:none}
+#phAlb::-webkit-scrollbar{display:none}
+#phAlb p{margin:4px 8px;color:#b9b0a0;font-size:13px}
+#phAlb .th{flex:none;width:76px;height:56px;padding:0;border-radius:6px;background-size:cover;background-position:center}
+#phFlash{position:absolute;inset:0;background:#fff;opacity:0}
+#phFlash.go{animation:phFl .45s ease-out}
+@keyframes phFl{0%{opacity:.9}100%{opacity:0}}
+#phView{position:absolute;inset:0;background:rgba(10,12,16,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px));pointer-events:auto}
+#phImg{max-width:100%;max-height:calc(100% - 96px);object-fit:contain;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+#phVcap{color:#d8cfbd;font:italic 14px "Iowan Old Style",Palatino,Georgia,serif;text-align:center}
+#phView .btns{justify-content:center;margin:0}
+#phView button{height:40px;padding:0 14px;font-size:14px;font-weight:600}
+@media (prefers-reduced-motion:reduce){#phFlash.go,#phAlbBtn.new{animation:none}}
+/* the street on foot: a passer-by's words over their head (with a button to build what the street lacks), and a small job for the Mayor */
+#say{position:absolute;z-index:29;transform:translate(-50%,-100%);margin-top:-8px;width:max-content;max-width:min(250px,70vw);background:rgba(18,24,32,.86);color:#efe6d2;border:1px solid rgba(216,180,94,.55);border-radius:12px;padding:6px 10px 5px;font:italic 14px/1.3 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;box-shadow:0 3px 12px rgba(0,0,0,.35);cursor:pointer;touch-action:pan-x pan-y;text-align:center}
+#say::after{content:'';position:absolute;left:50%;bottom:-7px;margin-left:-7px;border:7px solid transparent;border-bottom:0;border-top-color:rgba(18,24,32,.86)}
+#say #sayAct{display:block;margin:6px auto 1px;font:600 13px system-ui,sans-serif;color:#1d1b1a;background:rgba(216,180,94,.92);border:0;border-radius:9px;padding:7px 11px;font-style:normal;touch-action:pan-x pan-y;cursor:pointer}
+#say #sayAct[hidden]{display:none}
+/* a line overheard in passing: smaller and quieter */
+#say.soft{font-size:12.5px;padding:4px 8px 3px;max-width:min(210px,60vw);background:rgba(18,24,32,.7);border-color:rgba(216,180,94,.3);opacity:.9}
+#say[hidden],#sayCard[hidden],#job[hidden],#jobMk[hidden],#jobMk i[hidden],#jobGo[hidden]{display:none}
+#sayCard{position:absolute;z-index:32;left:50%;top:calc(110px + env(safe-area-inset-top,0px));transform:translateX(-50%);width:min(340px,calc(100% - 24px));background:rgba(18,24,32,.92);color:#efe6d2;border:1px solid rgba(216,180,94,.55);border-radius:14px;padding:12px 14px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.45)}
+#sayCard b{color:#f1d98a}#sayCard p{margin:6px 0}
+#sayCard .btns{justify-content:flex-end;margin-top:8px}#sayCard.who>.btns{display:none!important}#sayCard.who #sayBody .btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-start}#sayCard.who .m{color:#b9b09a;font-size:13px}
+#sayCard button,#job button{background:rgba(216,180,94,.2);color:#efe6d2;border:1px solid rgba(216,180,94,.5);border-radius:9px;padding:6px 10px;font:600 13px system-ui,sans-serif;touch-action:pan-x pan-y}
+#job{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:30;display:flex;gap:6px;align-items:center;background:rgba(18,24,32,.84);color:#efe6d2;border:1px solid rgba(216,180,94,.55);border-radius:12px;padding:6px 8px;font-size:14px;font-weight:600;max-width:calc(100% - 24px);box-shadow:0 3px 12px rgba(0,0,0,.35)}
+#jobTxt{padding:0 4px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#scn:not([hidden])~#job{bottom:60px}
+body.walking #job{bottom:auto;top:calc(62px + env(safe-area-inset-top,0px))}
+body.walking #scn:not([hidden])~#job{top:calc(110px + env(safe-area-inset-top,0px))}
+@media (max-width:700px){body.walking #job{top:calc(160px + env(safe-area-inset-top,0px))}body.walking #scn{top:calc(160px + env(safe-area-inset-top,0px))}body.walking #scn:not([hidden])~#job{top:calc(208px + env(safe-area-inset-top,0px))}}
+/* a card open at the bottom: the scene's message and the errand's sit just above it (--cardH, kept by the engine), so that they never cover
+   the card's buttons; the card stays low enough for them to fit under the zoom buttons, and scrolls inside when it has more to show */
+body:not(.walking):has(.panel:not([hidden])) #scn,body:not(.walking):has(.panel:not([hidden])) #job{bottom:calc(var(--cardH,0px) + 18px)}
+body:not(.walking):has(.panel:not([hidden])) #scn:not([hidden])~#job{bottom:calc(var(--cardH,0px) + 66px)}
+body:not(.walking):has(#scn:not([hidden])) .panel,body:not(.walking):has(#job:not([hidden])) .panel{max-height:min(70%,calc(100% - 246px))}
+body:not(.walking):has(#scn:not([hidden])~#job:not([hidden])) .panel{max-height:min(70%,calc(100% - 294px))}
+body:not(.walking):has(#scn.ask:not([hidden])) .panel{max-height:min(70%,calc(100% - 376px))}
+body:not(.walking):has(#scn.ask:not([hidden])~#job:not([hidden])) .panel{max-height:min(70%,calc(100% - 424px))}
+#jobMk{position:absolute;z-index:28;transform:translate(-50%,-100%);font-size:22px;line-height:1;pointer-events:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.7));animation:nrp 1.6s ease-in-out infinite}
+/* the case's marker says where and how far; its banner says the next step in full */
+#jobMk small{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:4px;white-space:nowrap;font:600 11px system-ui,sans-serif;color:#efe6d2;background:rgba(18,24,32,.82);border:1px solid rgba(216,180,94,.45);border-radius:8px;padding:2px 6px}
+#jobMk small[hidden]{display:none}
+/* on foot the marker and the person under it can be tapped: to talk when close, to go there when not */
+body.walking #jobMk{pointer-events:auto;cursor:pointer}#jobMk b{position:absolute;left:50%;top:100%;width:64px;transform:translateX(-50%)}#jobMk b[hidden]{display:none}
+/* standing at a scene, its banner with Go there gives way: the button by the stick is what counts there */
+body.walking #scn.here:not(.ask){display:none!important}
+/* and while a card is open the banner keeps out of its way */
+body:has(#ov:not([hidden])) #scn{display:none!important}
+#job.case{flex-wrap:wrap;justify-content:flex-end;width:min(420px,calc(100% - 24px));max-width:none}#job.case #jobTxt{flex-basis:100%;white-space:normal;line-height:1.3;padding:0 2px 2px}
+/* during a case only the case shows */
+body.oncase #scn,body.oncase #msg,body.oncase #msgN,body.oncase #say,body.oncase #wkRide,body.oncase #nudge{display:none!important}
+details.more summary{cursor:pointer;color:var(--brass,#b08a3e);font-weight:600;margin-top:4px}details.more{margin-top:2px}
+#jobMk i{position:absolute;left:50%;top:50%;width:0;height:0;margin:-9px 0 0 -6px;border:9px solid transparent;border-right:0;border-left:13px solid #c8352a;transform-origin:6px 9px;filter:drop-shadow(0 0 2px rgba(0,0,0,.8))}
+body:not(.walking) #say,body:not(.walking) #sayCard,body:not(.walking) #jobMk,body.photo #say,body.photo #sayCard,body.photo #job,body.photo #jobMk{display:none!important}
+#g3err{position:absolute;left:12px;right:12px;bottom:12px;color:#b8322a;font-weight:600}
+/* developer mode (?dev): one small button at the left edge with the frame rate on it, and the sheet it opens */
+#devBtn{position:fixed;left:calc(6px + env(safe-area-inset-left,0px));top:46%;z-index:4;min-width:44px;height:34px;padding:0 7px;border-radius:10px;background:rgba(20,24,30,.78);color:#e8e0cc;border:1px solid rgba(216,180,94,.45);font:600 12px ui-monospace,monospace;touch-action:pan-x pan-y}
+#devBtn[hidden],#devSheet[hidden],body.photo #devBtn{display:none!important}
+#devSheet{position:fixed;left:calc(8px + env(safe-area-inset-left,0px));top:calc(8px + env(safe-area-inset-top,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));width:min(380px,calc(100% - 16px));z-index:40;display:flex;flex-direction:column;border-radius:14px;background:rgba(20,24,30,.94);color:#e8e0cc;border:1px solid rgba(216,180,94,.35);box-shadow:0 10px 36px rgba(0,0,0,.5);font:13px system-ui,sans-serif}
+#devHd{display:flex;align-items:center;gap:8px;padding:8px 8px 6px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
+#devHd b{font-size:14px}#devFps{flex:1;min-width:0;font:10.5px/1.3 ui-monospace,monospace;color:#c9c0aa}
+#devBody{overflow:auto;padding:4px 10px 12px;-webkit-overflow-scrolling:touch}
+#devBody h3{margin:12px 0 5px;font:700 11px system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#d8b45e}
+#devBody .dr{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+#devSheet button,#devSheet select{min-height:32px;padding:4px 9px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:inherit;font:inherit;touch-action:pan-x pan-y}
+#devSheet button.on{background:rgba(201,162,39,.55)}#devSheet select{font-size:16px}
+#devBody p{margin:4px 0;color:#a79f8c;font-size:12px}
+/* the loading screen: from the first paint until the city is drawn, and again while a city is built (loadShow, loadEnd) */
+#load{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:24px;text-align:center;background:radial-gradient(ellipse at 50% 42%,#1d2c3c 0%,#0d1621 72%);color:#e8e2d2;transition:opacity .5s}
+#load.out{opacity:0;pointer-events:none}
+#load[hidden]{display:none}
+#loadArt svg{width:min(300px,78vw);height:auto;display:block;margin-bottom:14px}
+#load h1{font-size:40px;margin:0;color:#e8e2d2}
+#loadCity{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;font-size:18px;color:#d8b45e;letter-spacing:1px}
+#loadBar{position:relative;width:min(260px,70vw);height:4px;margin-top:26px;border-radius:2px;background:rgba(232,226,210,.14);overflow:hidden}
+#loadBar i{position:absolute;left:0;top:0;bottom:0;width:6%;border-radius:2px;background:#d8b45e;transition:width .4s}
+#loadBar::after{content:'';position:absolute;top:0;bottom:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,240,200,.4),transparent);animation:loadSh 1.5s linear infinite}
+@keyframes loadSh{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
+#loadTxt{min-height:18px;margin-top:8px;font-size:13px;color:#94a2ae}
+/* a turning ring under the bar, so the screen never looks stuck */
+#loadSpin{width:22px;height:22px;margin-top:14px;border-radius:50%;border:2px solid rgba(232,226,210,.16);border-top-color:#d8b45e;animation:loadSpin .9s linear infinite}
+@keyframes loadSpin{to{transform:rotate(360deg)}}
+/* ---------- the guided tutorial (tutorial.js): the advisor's card, the goal, the gold ring and arrow, the coins ---------- */
+#tg{position:absolute;left:8px;right:8px;max-width:440px;margin:0 auto;z-index:35;display:flex;gap:10px;align-items:flex-start;background:rgba(28,22,16,.95);color:#efe6d2;border:1px solid rgba(216,180,94,.75);border-radius:14px;padding:10px 12px;box-shadow:0 6px 22px rgba(0,0,0,.4);font:14px/1.35 system-ui,sans-serif}
+#tg[hidden]{display:none}body.walking #tg{z-index:40}body.walking #tg.top{top:calc(58px + env(safe-area-inset-top,0px))}body.walking #tg.side{top:calc(146px + env(safe-area-inset-top,0px))}body.walking #tg.bot{bottom:236px}body.walking #tg.wgBig{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto}#tg.top{top:var(--tgT,8px)}#tg.bot{bottom:8px}
+#tg.side{width:300px;right:auto;max-width:none;top:8px}#tg.side.right{left:auto;right:8px}#tg.side.left{left:8px}
+#tg .tgFace{flex:none;width:52px;height:61px}#tg .tgBody{flex:1;min-width:0}#tg.tgOut{opacity:0;transform:translateY(-8px);transition:opacity .3s ease-in,transform .3s ease-in}#tg.tgPop{animation:tgFlash 1s ease-out}#tg.tgPop .tgBody{animation:tgIn .5s ease-out}@keyframes tgFlash{0%{box-shadow:0 0 0 3px #e2b84a,0 0 22px 6px rgba(255,214,110,.55)}100%{box-shadow:0 6px 22px rgba(0,0,0,.4)}}@keyframes tgIn{0%{opacity:.15;transform:translateY(-5px)}100%{opacity:1;transform:none}}#tg small{display:block;color:#c9b37c;font-size:11.5px;margin-bottom:2px}
+#tg p{margin:0 0 6px;font-size:15px;font-weight:600}
+.tgGoal{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:13px;background:rgba(216,180,94,.12);border-radius:9px;padding:5px 8px}.tgGoal b{color:#f0d488}
+/* a chain on the goal line: the works with their icons and arrows, each ticked once built, and the goods under them */
+.tgGoal .tgCk{white-space:nowrap}.tgGoal .tgCk.ok{color:#a8d8a4}
+/* a step done: the card glows gold, steady, and its goal row turns gold; a goal that counts up pops once */
+#tg[data-by="city"].tgDone{border-color:#f0d488;box-shadow:0 0 0 2px #e2b84a,0 0 20px 5px rgba(255,214,110,.4)}
+#tg[data-by="city"].tgDone .tgGoal{background:rgba(216,180,94,.3)}#tg[data-by="city"].tgDone p{color:#f6e3ac}
+.tgLate{opacity:0;transition:opacity .45s}.tgLate.on{opacity:1}
+.tgGoal.tgUp{animation:tgUp .9s ease-out}@keyframes tgUp{0%{background:rgba(255,214,110,.7);transform:scale(1.06)}100%{background:rgba(216,180,94,.12);transform:none}}
+/* a step of several buildings as a checklist: an empty square before each, ticked green once it stands */
+.tgGoal .tgL{flex-basis:100%;display:flex;flex-direction:column;gap:3px;margin:2px 0 1px}.tgGoal .tgL .tgCk{display:flex;align-items:center;gap:7px}
+.tgGoal .tgL .tgCk::before{content:'';flex:none;width:12px;height:12px;border:2px solid #c9b37c;border-radius:3px}
+.tgGoal .tgL .tgCk.ok::before{content:'✓';border-color:#6fbf6a;background:#6fbf6a;color:#13200f;font:800 10px/12px system-ui,sans-serif;text-align:center}.tgGoal i{font-style:normal;color:#c9b37c;margin:0 4px}.tgGoal .tgGoods{flex-basis:100%;font-size:12px;color:#c9b37c;margin-top:7px;padding:5px 9px;border-radius:8px;background:rgba(216,180,94,.13);border:1px solid rgba(216,180,94,.32);box-sizing:border-box}
+.tgB{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}.tgB:empty{display:none}.tgB button{touch-action:manipulation}
+#tg .tgCt{margin-left:10px;font-size:12px;color:#a99a7a;align-self:center}
+#tg .tgSkip{background:transparent;border-color:transparent;color:#a99a7a;text-decoration:underline;font-size:12.5px;padding:4px 2px;margin-left:auto}
+/* every button the tutorial asks to press has one look, the look of ✓ Build: filled gold with dark words, a pale line on its edge,
+   a gold line round that and a small glow. Where a row or the top bar cuts off anything outside a button (the chips at the top),
+   the two lines lie inside its edge, in the same order. A sign on the map keeps its own colour inside the same two lines */
+.tgRing{position:relative;z-index:2;outline:3px solid #fff1c2!important;outline-offset:-3px;box-shadow:0 0 0 3px #e2b84a,0 0 16px 6px rgba(255,214,110,.8)!important}
+button.tgRing,body.tgStl #stlGo{background:var(--brass)!important;color:var(--panel)!important;border-color:var(--brass)!important}
+button.tgRing:not(.tab):not(.bb):not(.cat){font-weight:600}
+/* a tab in the bottom bar has no room around it (the Build tab sits at the screen's edge): ringed, it draws itself a little smaller,
+   so its ring fits inside its own cell */
+#tabs .tab.tgRing{transform:scale(.86)}#tabs .tab.tgRing span{color:var(--panel)!important}
+/* the house card's need button (Build a market) when the tutorial points at it: the card is drawn again every second, so the ring is a class on the page and stays steady */
+body.tgStl #stlGo{position:relative;z-index:2;outline:3px solid #fff1c2!important;outline-offset:-3px;box-shadow:0 0 0 3px #e2b84a,0 0 16px 6px rgba(255,214,110,.8)!important}
+#res .coin{width:18px;height:18px;vertical-align:-4px;margin-right:1px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}#ov h2 .coin,#ov .why .coin{width:1.15em;height:1.15em;vertical-align:-.2em}.coin.ci{width:1.1em;height:1.1em;vertical-align:-.2em;display:inline-block}.cst{white-space:nowrap;margin-right:6px}
+/* the speed menu under its button (below the tutorial's dimming, so its hand and hole show over it) */
+#spdMenu{position:fixed;z-index:32;display:flex;flex-direction:column;gap:4px;min-width:118px;background:rgba(20,18,14,.97);border:1px solid rgba(216,180,94,.6);border-radius:12px;padding:6px;box-shadow:0 8px 22px rgba(0,0,0,.5)}
+#spdMenu button{text-align:left;font:600 15px system-ui,sans-serif;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,.05);color:#efe6d2;border:1px solid transparent}
+#spdMenu button.on{background:#d9b24a;color:#1d1b1a}
+/* a chip at the top the tutorial asks to tap (a good, the money, the desk) and the time button: the bar cuts off anything outside
+   them, so the gold line and the pale line lie inside the chip's edge (the same rule is written by ring() in tutorial.js for the
+   chips that are drawn again with every number) */
+#res .chip.tgRing,#stores [data-g].tgRing,body.tgSpd #res [data-sp]{position:relative;z-index:2;outline:none!important;background:var(--brass)!important;color:var(--panel)!important;border-color:#e2b84a!important;border-radius:9px;box-shadow:inset 0 0 0 2px #e2b84a,inset 0 0 0 4px #fff1c2!important}
+/* a kind's tab and a group's pill in the build bar: rounded and a little smaller than their place, so the two lines fit in the row;
+   the open kind's own underline rests while another tab is the one to tap */
+#cats .cat.tgRing{margin:3px 3px 5px;border-radius:10px;border-bottom:0;outline-width:2px!important;outline-offset:-2px;box-shadow:0 0 0 2px #e2b84a,0 0 5px 2px rgba(255,214,110,.8)!important}
+#cats:has(.tgRing) .cat.on:not(.tgRing){color:#b9b0a0;border-bottom-color:transparent;background:transparent}
+#subs .cat.tgRing{outline-width:2px!important;outline-offset:-2px;box-shadow:0 0 0 2px #e2b84a,0 0 5px 2px rgba(255,214,110,.8)!important}
+/* a building's card in the row: the row cuts a wide glow, so its glow is small; its cost is dark on the gold */
+#builds .bb.tgRing{box-shadow:0 0 0 3px #e2b84a,0 0 6px 3px rgba(255,214,110,.8)!important}
+#builds .bb.tgRing .c{color:#3a2f16}#builds .bb.tgRing .c .lack{color:#8a2414}
+#tgArrow{position:fixed;z-index:34;width:0;height:0;pointer-events:none;transition:opacity .2s}#tgArrow[hidden]{display:none}#tgArrow.gone{opacity:0}
+#tgArrow em{transition:transform .5s cubic-bezier(.45,0,.2,1)}#tgArrow.jump em{transition:none}body.walking #tgArrow{z-index:46}body.walking #tg{z-index:47}
+/* the tutorial's spotlight: the screen dims a little round the button to tap or the building in focus (below the card and the arrow).
+   The lit hole is at its place at once, never sliding there: only the dimming fades */
+#tgDim{position:fixed;left:50%;top:50%;width:0;height:0;z-index:33;pointer-events:none;border-radius:14px;box-shadow:0 0 26px 200vmax rgba(6,8,12,.42);opacity:0;transition:opacity .35s}#tgDim.on{opacity:1}
+/* the first lesson's gestures on the map: a fingertip sliding between two arrows (drag), then two fingertips spreading apart (pinch) */
+/* the box reaches 24px above the drawing, so the hands never rise past its edge as they move. The drawing's class is its own (gtr):
+   the trade rows' class "tr" gave it their thin top border, a line across the whole hint */
+#tgHand{position:fixed;left:50%;top:56%;width:220px;height:164px;margin:-94px 0 0 -110px;z-index:34;pointer-events:none}#tgHand[hidden]{display:none}
+#tgHand svg.gtr{position:absolute;left:0;top:24px;width:220px;height:140px;fill:none;stroke:#f3d27a;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+#tgHand.drag .p,#tgHand.pinch .d,#tgHand.drag .h2,#tgHand.drag .r2{display:none}
+#tgHand .hn{position:absolute;top:21px;left:76px;width:52px;height:78px;opacity:0;filter:drop-shadow(0 4px 5px rgba(0,0,0,.55))}#tgHand .hn svg{display:block;width:52px;height:78px;overflow:hidden}
+#tgHand .rp{position:absolute;left:28px;top:86px;width:24px;height:24px;border-radius:50%;border:3px solid #fff6dc;box-shadow:0 0 8px rgba(255,214,110,.6);opacity:0}
+/* drag: the hand comes down onto the map at the left, slides right with the arrow drawing behind it, lifts and fades */
+#tgHand.drag .h1{animation:tgHDrag 2.6s ease-in-out infinite}#tgHand.drag .rp{animation:tgHRp 2.6s ease-out infinite}
+#tgHand.drag .ln{stroke-dasharray:134;animation:tgHLn 2.6s ease-in-out infinite}#tgHand .hd_{opacity:0}#tgHand.drag .hd_{animation:tgHHd 2.6s ease-in-out infinite}
+@keyframes tgHDrag{0%{transform:translate(-70px,-14px);opacity:0}12%{transform:translate(-70px,-14px);opacity:1}24%{transform:translate(-70px,0) scale(.97)}72%{transform:translate(64px,0) scale(.97)}84%{transform:translate(64px,-14px);opacity:1}100%{transform:translate(64px,-14px);opacity:0}}
+@keyframes tgHLn{0%,24%{stroke-dashoffset:134;opacity:1}72%{stroke-dashoffset:0;opacity:1}90%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes tgHHd{0%,64%{opacity:0}72%,86%{opacity:1}100%{opacity:0}}
+@keyframes tgHRp{0%,20%{opacity:0;transform:scale(.4)}26%{opacity:.9}46%,100%{opacity:0;transform:scale(1.9)}}
+/* pinch: two hands come down together in the middle and their fingers spread apart, an arrow out from each */
+#tgHand.pinch .h1{left:92px;animation:tgHPa 2.6s ease-in-out infinite}#tgHand.pinch .h2{animation:tgHPb 2.6s ease-in-out infinite}
+#tgHand.pinch .rp{left:86px}#tgHand.pinch .r2{left:110px}#tgHand.pinch .rp{animation:tgHRp 2.6s ease-out infinite}
+#tgHand.pinch .ln{stroke-dasharray:56;animation:tgHLp 2.6s ease-in-out infinite}#tgHand.pinch .hd_{animation:tgHHd 2.6s ease-in-out infinite}
+@keyframes tgHPa{0%{transform:translate(-6px,-14px) scaleX(-1);opacity:0}12%{transform:translate(-6px,-14px) scaleX(-1);opacity:1}24%{transform:translate(-6px,0) scaleX(-1)}72%{transform:translate(-56px,0) scaleX(-1)}84%{transform:translate(-56px,-14px) scaleX(-1);opacity:1}100%{transform:translate(-56px,-14px) scaleX(-1);opacity:0}}
+@keyframes tgHPb{0%{transform:translate(6px,-14px);opacity:0}12%{transform:translate(6px,-14px);opacity:1}24%{transform:translate(6px,0)}72%{transform:translate(56px,0)}84%{transform:translate(56px,-14px);opacity:1}100%{transform:translate(56px,-14px);opacity:0}}
+@keyframes tgHLp{0%,24%{stroke-dashoffset:56;opacity:1}72%{stroke-dashoffset:0;opacity:1}90%,100%{stroke-dashoffset:0;opacity:0}}
+/* the tutorial's arrow: a drawn gold arrow, its tip on the point, bobbing; on a place on the map a steady gold ring lies on the ground under it;
+   at the screen's edge it turns to point the way to a place out of view, with a hint, and a tap brings the place into view */
+#tgArrow em{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0}
+#tgArrow,#tgHand{--sl:#ece6d6;--sls:#c9c0ab;--cf:#a8322b;--pp:#d9b45a;--hd:#f8f4ea;--hs:#d6cdb9;--nl:#ebe4d4;--cr:#b9ae96}
+#tgArrow[data-who=greeley],#tgHand[data-who=greeley]{--sl:#2b2826;--sls:#151413;--cf:#f1ede4;--pp:#8f8a80;--hd:#ebc7a4;--hs:#c79c78;--nl:#f4dccb;--cr:#a87e5e}
+#tgArrow[data-who=sisi],#tgHand[data-who=sisi]{--sl:#2e2438;--sls:#1c1623;--cf:#f4efe6;--pp:#cfc3db;--hd:#faf6ee;--hs:#dad2c3;--nl:#ede6d8;--cr:#c4baa6}
+#tgArrow svg{position:absolute;left:-34px;top:-78px;width:52px;height:78px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.55));animation:tgTap 1.4s cubic-bezier(.5,0,.3,1) infinite}
+@keyframes tgTap{0%,30%,100%{transform:translateY(-10px)}48%{transform:translateY(1px) scale(.97)}62%{transform:translateY(-10px)}}
+#tgArrow b{position:absolute;left:-15px;top:-15px;width:30px;height:30px;border-radius:50%;border:3px solid #fff6dc;box-shadow:0 0 8px rgba(255,214,110,.6);opacity:0;pointer-events:none;animation:tgRip 1.4s ease-out infinite}
+@keyframes tgRip{0%,45%{transform:scale(.3);opacity:0}50%{opacity:.95}85%,100%{transform:scale(2.2);opacity:0}}#tgArrow.edge b{display:none}
+#tgArrow s{display:none;position:absolute;left:-26px;top:-13px;width:52px;height:26px;border:3px solid #ecc25a;border-radius:50%;box-shadow:0 0 12px 3px rgba(255,214,110,.6),inset 0 0 8px rgba(255,214,110,.5)}
+#tgArrow.place s{display:block}
+#tgArrow span{display:none;position:absolute;width:160px;background:rgba(28,22,16,.95);color:#efe6d2;border:1px solid rgba(216,180,94,.75);border-radius:10px;padding:5px 8px;font:600 12.5px/1.3 system-ui,sans-serif;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,.4)}
+#tgArrow.edge{pointer-events:none}#tgArrow.edge em svg,#tgArrow.edge span{pointer-events:auto;cursor:pointer}
+#tgArrow.edge span{display:block}
+#tgArrow.edge svg{animation:tgNudge .9s ease-in-out infinite}
+@keyframes tgNudge{50%{transform:translateY(-12px)}}
+/* a home built higher: a green band at the top of its card for a few seconds, popping in once */
+.upI{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#2f9e4a;border:2px solid #fff;color:#fff;font:800 12px system-ui,sans-serif;vertical-align:-5px;margin-right:3px}.upI.dim{background:#5d6b60;border-color:#c9c2b2;color:#e6e0d2}
+.okUp{clear:both;background:#2f6b3d;color:#eef8ec;border:1px solid #6fbf7d;border-radius:10px;padding:8px 10px;margin:18px 0 8px;font-size:14px;line-height:1.35;box-shadow:0 0 14px rgba(111,191,125,.45)}
+#tierBtn .tbC{display:inline-block;margin-top:5px}.okUp.new{animation:okPop .6s ease-out}
+@keyframes okPop{0%{transform:scale(.85);opacity:0}60%{transform:scale(1.04);opacity:1}100%{transform:scale(1)}}
+/* a second thing to notice glows softer, so it does not shout over the step's own ring */
+.tgRing2{outline:2px solid #fff1c2!important;outline-offset:-3px;box-shadow:0 0 0 2px rgba(226,184,74,.75),0 0 12px 4px rgba(255,214,110,.45)!important}
+body.tg #goals,body.tg #nudge,body.tg #tut,body.tg #mode{display:none!important}
+.bb.locked .bi{filter:grayscale(1) sepia(.35) contrast(.85);opacity:.6}.bb.locked .c{font-style:italic}
+</style>
+  <script type="module" crossorigin src="../assets/newyork-C2ESs_4M.js"></script>
+</head>
+<body>
+<div id="load" role="status" aria-live="polite"><div id="loadArt"></div><h1>Great Cities</h1><div id="loadCity"></div><div id="loadBar"><i></i></div><div id="loadTxt">Laying out the streets…</div><div id="loadSpin"></div></div>
+<script>
+/* the loading screen runs before the game: the city last played is read from the save's key, and the screen leaves once the 3D city
+   is really drawn after loadEnd: its triangle count (frame.js reports it through loadTick) high and steady for four frames running;
+   or 25 seconds after loadEnd whatever happens. The bar creeps on by itself between the steps, slower the further it gets */
+(function(){const el=document.getElementById('load'),bar=el.querySelector('#loadBar i'),txt=document.getElementById('loadTxt'),cty=document.getElementById('loadCity'),art=document.getElementById('loadArt');
+ const ART={nyc1865:'<svg viewBox="0 0 240 72" aria-hidden="true"><g fill="#2a3d52"><rect x="0" y="54" width="240" height="18"/><rect x="6" y="42" width="22" height="13"/><rect x="30" y="35" width="18" height="20"/><rect x="50" y="45" width="16" height="10"/><polygon points="76,55 76,31 82,31 85,3 88,31 94,31 94,55"/><rect x="98" y="39" width="24" height="16"/><rect x="124" y="43" width="14" height="12"/><rect x="140" y="31" width="20" height="24"/><rect x="162" y="45" width="16" height="10"/><rect x="192" y="14" width="1.6" height="38"/><rect x="206" y="21" width="1.6" height="31"/><rect x="220" y="10" width="1.6" height="42"/><polygon points="184,50 232,50 227,56 189,56"/></g><g fill="#d8b45e" opacity=".55"><rect x="12" y="46" width="2" height="2"/><rect x="36" y="40" width="2" height="2"/><rect x="42" y="46" width="2" height="2"/><rect x="104" y="44" width="2" height="2"/><rect x="114" y="44" width="2" height="2"/><rect x="146" y="36" width="2" height="2"/><rect x="152" y="44" width="2" height="2"/></g></svg>',
+  wien1857:'<svg viewBox="0 0 240 72" aria-hidden="true"><g fill="#2a3d52"><rect x="0" y="54" width="240" height="18"/><rect x="8" y="44" width="26" height="11"/><rect x="36" y="40" width="20" height="15"/><rect x="60" y="42" width="30" height="13"/><path d="M63 42a12 12 0 0 1 24 0z"/><rect x="74" y="24" width="2" height="7"/><polygon points="102,55 102,38 110,30 156,30 164,38 164,55"/><polygon points="164,55 164,35 168,35 172,2 176,35 180,35 180,55"/><rect x="186" y="42" width="22" height="13"/><rect x="210" y="46" width="26" height="9"/></g><g fill="#d8b45e" opacity=".55"><rect x="14" y="47" width="2" height="2"/><rect x="42" y="44" width="2" height="2"/><rect x="120" y="42" width="2" height="3"/><rect x="134" y="42" width="2" height="3"/><rect x="148" y="42" width="2" height="3"/><rect x="192" y="46" width="2" height="2"/><rect x="216" y="49" width="2" height="2"/></g></svg>'};
+ const NAME={nyc1865:'New York · 1865',wien1857:'Vienna · 1865'};
+ const city=n=>{const k=ART[n]?n:'nyc1865';cty.textContent=NAME[k];art.innerHTML=ART[k]};
+ let c='nyc1865';try{c=localStorage.getItem(/[?&]dev\b/.test(location.search)?'ns3d-dev-city':'ns3d-city')||c}catch(e){}
+ /* a link that names the city (?city=wien, as the engine reads it) shows that city from the first frame */
+ {const m=/[?&]city=(\w+)/.exec(location.search),k=m&&{wien:'wien1857',vienna:'wien1857',ny:'nyc1865',nyc:'nyc1865',newyork:'nyc1865'}[m[1].toLowerCase()];if(k)c=k}window.LOADC=c;city(c);
+ let n=0,need=-1,tm=0,cur=0,shw=0;const TRI=[];
+ setInterval(()=>{if(el.hidden)return;shw=Math.max(cur,shw+(.96-shw)*.012);bar.style.width=(shw*100).toFixed(1)+'%'},120);
+ const hide=()=>{need=-1;clearTimeout(tm);shw=1;bar.style.width='100%';el.classList.add('out');setTimeout(()=>{if(el.classList.contains('out'))el.hidden=true},600)};
+ /* the bar only moves on: the game and the 3D view load side by side and report in either order */
+ window.loadStep=(p,t)=>{if(p<cur)return;cur=p;if(t)txt.textContent=t};
+ window.loadShow=k=>{if(k)city(k);el.hidden=false;el.classList.remove('out');need=-1;cur=0;shw=0;loadStep(.15,'Laying out the streets…')};
+ window.loadEnd=()=>{loadStep(.8,'Lighting the gas lamps…');need=n+2;TRI.length=0;clearTimeout(tm);tm=setTimeout(hide,25000)};
+ window.loadTick=t=>{n++;if(need<0)return;if(t<0){if(n>=need)hide();return}TRI.push(t||0);if(TRI.length>4)TRI.shift();if(n>=need&&TRI.length===4&&TRI[3]>15000&&Math.abs(TRI[3]-TRI[0])<=TRI[3]*.05)hide()};
+ tm=setTimeout(hide,20000)})();
+</script>
+<script>/* German Vienna: the loading screen in German from its first frame */try{if(localStorage.getItem('ns3d-lang')==='de'&&(window.LOADC||localStorage.getItem(/[?&]dev\b/.test(location.search)?'ns3d-dev-city':'ns3d-city'))==='wien1857'){document.getElementById('loadCity').textContent='Wien · 1865';document.getElementById('loadTxt').textContent='Die Straßen werden abgesteckt…'}}catch(e){}</script>
+<div id="app">
+  <div id="top"><div id="res"></div><div id="stores" role="button" aria-label="Your stores"></div><div id="hint"></div></div>
+  <div id="stage">
+    <canvas id="c" tabindex="0" aria-label="Map of New York"></canvas><canvas id="g3" aria-label="Map of New York in 3D"></canvas><div id="tags"></div><div id="vig"></div>
+    <canvas id="mini" aria-label="Minimap. Tap to jump there"></canvas>
+    <div id="goals" hidden></div>
+    <div id="mode" hidden><div id="modeTxt"></div><button id="modeFind">📍 Find a spot</button><button id="modeUndo">↶ Undo</button><button id="modeDone">Done</button></div>
+    <div id="planCred" hidden>Generalstadtplan 1904 · Stadt Wien – data.wien.gv.at · CC BY 4.0</div>
+    <div id="zb"><button id="zIn" aria-label="Zoom in">＋</button><button id="zOut" aria-label="Zoom out">−</button><button id="zWk" hidden aria-label="Walk the city" title="Walk the city"><svg class="mayor" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 21.8 15.6 14.6" stroke="#8a6d3b" stroke-width="1" stroke-linecap="round"/><path d="M11.4 15.8 9.3 21.2M13 15.8l2 5.6" stroke="#55504a" stroke-width="2.1" stroke-linecap="round"/><path d="M8.4 21.6h2.4M14.6 21.9h2.5" stroke="#1d1b1a" stroke-width="1.3" stroke-linecap="round"/><path d="M10.2 10.2q2.2-.9 4.4 0l.3 4.6.9 3.1q-3.4.9-6.6 0l.6-3.1z" fill="#24201d"/><path d="M14.4 10.8q1.6 2 1.4 4.1" stroke="#24201d" stroke-width="1.7" stroke-linecap="round" fill="none"/><path d="M11.9 10.1h1.4l-.7 2.1z" fill="#efe6d2"/><circle cx="12.5" cy="8" r="1.9" fill="#e2b98f"/><path d="M11 8.2q.1 1.9 1.6 2.1-.9-1-.8-2.4z" fill="#6b5a46"/><rect x="10.1" y="1.3" width="4.8" height="4.6" rx=".4" fill="#1d1b1a"/><rect x="10.1" y="4.6" width="4.8" height=".8" fill="#8a6d3b"/><rect x="8.9" y="5.5" width="7.2" height="1.1" rx=".55" fill="#1d1b1a"/></svg><b>Walk</b></button><button id="zPl" hidden aria-label="Places">🗺️</button></div>
+    <div id="home" hidden><div id="homeT"></div><div id="homeP" hidden></div><div id="homeB"><button id="homeFix">🛠️ Refurbish</button><button id="homeDin" hidden>🍽️ Give a dinner</button><button id="homeOut">🚪 Step outside</button></div></div><div id="wk"><button id="wkHome" hidden>🚪 Go inside your house</button><button id="wkExit" aria-label="Back to the city">⬅ Back</button><div id="wkStick" aria-label="Drag to walk"><svg viewBox="0 0 124 124" aria-hidden="true"><path d="M55 21l7-8 7 8M55 103l7 8 7-8M21 55l-8 7 8 7M103 55l8 7-8 7"/></svg><i></i><em>Drag to walk</em><b hidden></b></div><button id="wkAct" hidden></button><button id="wkRide" hidden></button><div id="wkDest" hidden></div><canvas id="wkMap" aria-label="Street map. Tap for a larger map"></canvas><div id="wkSt" hidden></div><div id="wkBig" hidden><canvas></canvas><small>The red arrow is you.</small><b>✕ Close</b></div></div>
+    <div id="scn" hidden><span id="scnTxt"></span><button id="scnGo">📍 Go there</button><button id="scnNo" aria-label="Let it pass">✕</button></div>
+    <div id="msg" hidden><small>A message from City Hall</small><b id="msgTxt"></b><div class="btns"><button id="msgGo"></button><button id="msgLater"></button></div></div><button id="msgN" hidden></button>
+    <div id="job" hidden><span id="jobTxt"></span><button id="jobNote" hidden>📓</button><button id="jobGo">📍 Show me</button><button id="jobX" aria-label="Leave it">✕</button></div>
+    <div id="say" hidden><span id="sayTxt"></span><button id="sayAct" hidden></button></div><div id="jobMk" hidden><span></span><i hidden></i><small hidden></small><b hidden></b></div>
+    <div id="sayCard" hidden><div id="sayBody"></div><div class="btns"><button id="sayGo">📍 Show me</button><button id="sayX">Close</button></div></div>
+    <div id="tut" hidden></div>
+<div id="conf" hidden><div class="cfArrows"><button data-mv="-1,0" aria-label="Move up-left">↖</button><button data-mv="0,-1" aria-label="Move up-right">↗</button><button data-mv="0,1" aria-label="Move down-left">↙</button><button data-mv="1,0" aria-label="Move down-right">↘</button></div><button id="confOk" class="pri"></button><button id="confNo" aria-label="Cancel">✕</button></div>
+<div id="nudge" hidden><span id="nudgeTxt"></span><button id="nudgeGo"></button><button id="nudgeX" aria-label="Close">✕</button></div><div id="lack" hidden><span id="lackTxt"></span><button id="lackBuild"></button><button id="lackBuild2" hidden></button><button id="lackTrade"></button><button id="lackX" aria-label="Close">✕</button></div>
+<div id="toast" role="status"></div>
+    <div id="info" class="panel" hidden><button class="x" id="infoX" aria-label="Close">✕</button><div id="infoBody"></div><div class="btns"><button id="infoAct" hidden></button><button id="infoDemo">Demolish</button><button id="infoClose" hidden>Close</button></div></div>
+    <div id="trade" class="panel" hidden><button class="x" id="tradeX" aria-label="Close">✕</button><h2>Trader</h2><p class="m">Merchants at the Naschmarkt buy and sell in lots of 5. Set a good to sell by itself, or full stores (over 80%) sell the rest cheaply.</p><label class="m" style="display:flex;gap:8px;align-items:center;margin:6px 0"><input type="checkbox" id="autoBuy" checked> Builders buy missing materials at market price +20%</label><button id="loanBtn" style="width:100%;margin:4px 0">🏦 City loan: 5,000 $ now, repay 6,000 over 5 years</button><div id="tradeRows"></div><div class="btns"><button id="tradeClose" class="pri">Close</button></div></div>
+  </div>
+  <div id="bar">
+    <div id="tabs">
+      <button class="tab" id="buildBtn"><i>🔨</i><span>Build</span></button>
+      <button class="tab" id="tCity" hidden><i>🏛️</i><span>City</span></button>
+      <button class="tab" id="tWalk" hidden><i>🚶</i><span>Walk</span></button>
+      <button class="tab" id="tMore"><i>☰</i><span>More</span></button>
+    </div>
+    <div class="sheet" id="shCity" hidden><div class="shh"><b>City</b><button class="shx" aria-label="Close">✕</button></div>
+      <button id="hallBtn" hidden>🏛️ City Hall</button><button id="resBtn" hidden>🔬 Research</button><button id="tradeBtn" hidden>⚖️ Trade</button><button id="caseBtn">🕵️ Cases</button><button id="albumBtn">📔 Album</button><button id="statsBtn">📊 Stats</button></div>
+    <div class="sheet" id="shMore" hidden><div class="shh"><b>More</b><button class="shx" aria-label="Close">✕</button></div>
+      <button id="demoBtn">🧹 Demolish</button><button id="undoBtn" disabled>↶ Undo</button><button id="saveBtn">💾 Saved games</button><button id="homeBtn" hidden>🗺️ Places</button><button id="planBtn" hidden>📜 Plan 1904</button><button id="helpBtn">❓ Help</button><button id="tgAgain">🎓 Play the tutorial again</button><button id="wgAgain">🚶 Replay walking guide</button><button id="startBtn">🗽 Start screen</button><button id="fbBtn">💬 Feedback</button>
+      <div class="shs">⚙️ Settings</div><button id="soundBtn">🔊 Sound</button><button id="musicBtn">🎵 Music: on</button><button id="coolBtn">🔋 Cooler phone: off</button><button id="dnBtn">🌓 Day / night</button></div>
+    <div class="row" id="cats"></div>
+    <div class="row" id="subs" hidden></div>
+    <div class="row" id="builds"></div>
+    <div class="row" id="trayAct"><button class="ctl" id="againBtn" hidden></button></div><button id="undoPill" hidden>↶ Undo</button>
+  </div>
+</div>
+<button id="devBtn" hidden aria-label="Developer tools">🛠️</button>
+<div id="devSheet" hidden><div id="devHd"><b>🛠️ Dev</b><span id="devFps"></span><button id="devX" aria-label="Close">✕</button></div><div id="devBody"></div></div>
+<div id="ov"><div class="card" id="ovCard"></div></div>
+
+<script src="engine.js"></script>
+<script src="tutorial.js"></script><script src="story.js"></script><script src="case-redl.js"></script>
+<script src="i18n-de.js"></script><script src="i18n.js"></script>
+</body>
+</html>
